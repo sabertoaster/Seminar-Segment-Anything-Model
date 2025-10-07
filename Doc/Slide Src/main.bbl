@@ -1,0 +1,60 @@
+\begin{thebibliography}{}
+
+\bibitem[Albanese et~al., 2024]{albanese2024hebbian}
+Albanese, L., Barra, A., Bianco, P., Durante, F., and Pallara, D. (2024).
+\newblock Hebbian learning from first principles.
+\newblock {\em Journal of Mathematical Physics}, 65(11).
+
+\bibitem[Dave, 2024]{mediumBrainsPixels}
+Dave, R.~H. (2024).
+\newblock {B}rains, {P}ixels, and {E}nergy: {T}he {P}hysics {B}ehind {A}{I}
+  {P}attern {R}ecognition: {J}ohn {J}. --- rajeevkdave.medium.com.
+\newblock
+  \href{https://rajeevkdave.medium.com/brains-pixels-and-energy-the-physics-behind-ai-pattern-recognition-john-j-27e2d80a8adf}{rejeevkdave}.
+
+\bibitem[Hertz et~al., 1991]{hertz1991introduction}
+Hertz, J., Krogh, A., and Palmer, R. (1991).
+\newblock {\em Introduction to the Theory of Neural Computation}.
+\newblock Addison-Wesley Computation and Neural Systems Series. Avalon
+  Publishing.
+
+\bibitem[Hopfield, 2007]{Hopfield:2007}
+Hopfield, J.~J. (2007).
+\newblock {H}opfield network.
+\newblock {\em Scholarpedia}, 2(5):1977.
+\newblock revision \#196687.
+
+\bibitem[Makarov, 2022]{Makarov2022}
+Makarov, D. (2022).
+\newblock Glassy net of nanomagnets.
+\newblock {\em Nature Physics}, 18(5):488--489.
+
+\bibitem[Mańdziuk, 1995]{nqueens}
+Mańdziuk, J. (1995).
+\newblock Solving the n-queens problem with a binary hopfield-type network.
+\newblock {\em Biological Cybernetics}, 72:439--445.
+
+\bibitem[M{\"u}ller et~al., 1995]{Müller1995}
+M{\"u}ller, B., Reinhardt, J., and Strickland, M.~T. (1995).
+\newblock {\em Statistical Physics and Spin Glasses}, pages 191--200.
+\newblock Springer Berlin Heidelberg, Berlin, Heidelberg.
+
+\bibitem[Parr et~al., 2022]{10.7551/mitpress/12441.001.0001}
+Parr, T., Pezzulo, G., and Friston, K.~J. (2022).
+\newblock {\em Active Inference: {{The}} Free Energy Principle in Mind, Brain,
+  and Behavior}.
+\newblock The MIT Press.
+
+\bibitem[Ramsauer et~al., 2020]{ramsauer2020hopfield}
+Ramsauer, H., Sch{\"a}fl, B., Lehner, J., Seidl, P., Widrich, M., Adler, T.,
+  Gruber, L., Holzleitner, M., Pavlovi{\'c}, M., Sandve, G.~K., et~al. (2020).
+\newblock Hopfield networks is all you need.
+\newblock {\em arXiv preprint arXiv:2008.02217}.
+
+\bibitem[Vaswani et~al., 2017]{vaswani2017attention}
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.~N.,
+  Kaiser, {\L}., and Polosukhin, I. (2017).
+\newblock Attention is all you need.
+\newblock {\em Advances in neural information processing systems}, 30.
+
+\end{thebibliography}
