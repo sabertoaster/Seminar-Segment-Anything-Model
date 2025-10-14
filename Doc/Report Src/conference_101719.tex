@@ -40,27 +40,83 @@ chungdatk5@gmail.com}
 \maketitle
 
 \begin{abstract}
-	\lipsum[50]
+	Image segmentation, a cornerstone of computer vision, involves partitioning an image into meaningful segments, a task fundamental to high-level image understanding. This paper presents a comprehensive survey of the evolution of image segmentation techniques. We trace the trajectory from early, pre-deep learning methods that relied on handcrafted features and mathematical models, to the revolutionary impact of the deep learning era, marked by architectures like Fully Convolutional Networks (FCN), U-Net, and Mask R-CNN. We then delve into the modern landscape, which is increasingly dominated by Transformer-based architectures and the paradigm of foundation models. A significant focus is placed on the Segment Anything Model (SAM), a recent breakthrough that introduced the concept of promptable, zero-shot segmentation, aiming to create a single, generalist model for a vast array of segmentation tasks. This survey analyzes the motivations, problem formulations, and core contributions of these pivotal works, providing a structured overview of the field's progress and highlighting the paradigm shift towards generalized, prompt-driven segmentation.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Segmentation, Online Learning, Representation Learning
+	Image Segmentation, Deep Learning, Foundation Models, Segment Anything (SAM), Computer Vision
 \end{IEEEkeywords}
 
 \section{Introduction}
-\lipsum[10]
 
-\subsection{Background}
-\lipsum[30]
+\subsection{General Background}
+Image segmentation is a fundamental task in computer vision that involves partitioning a digital image into multiple segments or sets of pixels, often corresponding to different objects or parts of objects. The goal is to simplify or change the representation of an image into something that is more meaningful and easier to analyze. The history of this field can be broadly divided into three distinct eras.
+
+\textbf{The Pre-Deep Learning Era (c. 1970s--2000s):} Before the widespread adoption of deep learning, segmentation methods were primarily based on handcrafted features and mathematical models. These techniques required significant domain knowledge and focused on pixel-level properties such as intensity, color, texture, and edges. Prominent methods from this period include:
+\begin{itemize}
+	\item \textbf{Canny Edge Detection:} Proposed by John Canny in 1986, this method became a standard for detecting a wide range of edges in images through a multi-stage algorithm \cite{canny1986computational}.
+	\item \textbf{Active Contour Models (Snakes):} Introduced by Kass et al. in 1988, these deformable models were particularly effective for segmenting objects with irregular shapes, finding extensive use in medical imaging \cite{kass1988snakes}.
+	\item \textbf{K-Means Clustering:} This unsupervised algorithm, formalized by MacQueen in 1967, partitions pixels into clusters based on feature similarity, serving as a foundational clustering-based segmentation technique \cite{macqueen1967some}.
+\end{itemize}
+These methods, while foundational, relied on heuristics and low-level features, often struggling with complex scenes and semantic understanding.
+
+\textbf{The Deep Learning Era (c. 2010s):} The advent of deep learning, particularly Convolutional Neural Networks (CNNs), revolutionized image segmentation. These models could automatically learn hierarchical features from data, eliminating the need for manual feature engineering. Key milestones include:
+\begin{itemize}
+	\item \textbf{Fully Convolutional Networks (FCN):} Long et al. (2015) introduced FCNs, which replaced fully connected layers in CNNs with convolutional layers, enabling end-to-end training for dense, pixel-wise prediction. The use of skip connections allowed the combination of deep, semantic features with shallow, appearance features \cite{long2015fully}.
+	\item \textbf{U-Net:} Proposed by Ronneberger et al. (2015), U-Net features a symmetric encoder-decoder architecture with extensive skip connections. This design proved highly effective for biomedical image segmentation, achieving remarkable performance with very few training images \cite{ronneberger2015u}.
+	\item \textbf{Mask R-CNN:} He et al. (2017) extended the Faster R-CNN object detection framework by adding a parallel branch for predicting segmentation masks. Mask R-CNN became a dominant framework for instance segmentation and a versatile backbone for many downstream tasks \cite{he2017mask}.
+\end{itemize}
+
+\textbf{Modern Research Directions:} Current research continues to build upon these deep learning foundations, exploring new architectures and learning paradigms for greater accuracy, efficiency, and generalization.
+\begin{itemize}
+	\item \textbf{Transformer-Based Architectures:} Vision Transformers (ViTs) and self-attention mechanisms have been adapted for segmentation, leading to models like TransUNet (2021) that combine the strengths of Transformers and U-Net \cite{chen2021transunet}.
+	\item \textbf{Foundation Models:} A recent paradigm shift involves building large-scale, pre-trained models that can be adapted to various tasks with minimal fine-tuning. The Segment Anything Model (SAM) from Meta AI (2023) exemplifies this, offering prompt-based, zero-shot segmentation for images \cite{kirillov2023segment}. Its successor, SAM 2 (2024), extends these capabilities to video \cite{ravi2024sam}.
+	\item \textbf{Self-Supervised Learning:} Techniques like contrastive learning (e.g., SimCLR) are being explored to reduce reliance on large labeled datasets, enabling models to learn powerful representations from unlabeled data.
+\end{itemize}
 
 \subsection{Motivation}
-\lipsum[30]
-\subsubsection{Scientific Significance}
-\lipsum[30]
-\subsubsection{Practical Significance}
-\lipsum[30]
-\subsection{Problem Statement}
+The drive to advance image segmentation stems from both scientific inquiry and practical necessity.
 
+Scientifically, segmentation addresses a fundamental question in perception: while image classification tells us \textit{what} is in an image, segmentation answers \textit{where} it is, down to the pixel level. This granular understanding is crucial for emulating the human ability to parse a scene into distinct objects and regions, forming the basis for true visual comprehension.
+
+Practically, segmentation is an enabling technology for a multitude of real-world applications:
+\begin{itemize}
+	\item \textbf{Autonomous Driving:} Segmenting lanes, pedestrians, vehicles, and traffic signs is critical for safe navigation.
+	\item \textbf{Medical Imaging:} Precise segmentation of tumors, organs, and other anatomical structures is vital for diagnosis, treatment planning, and surgical guidance.
+	\item \textbf{Real-World Data Complexity:} Segmentation provides a robust way to handle complex scenes with occluded or overlapping objects.
+	\item \textbf{Downstream Vision Tasks:} It serves as a foundational step for numerous other tasks, including object detection, tracking, and detailed semantic scene understanding. Without accurate segmentation, the performance of these downstream applications would be severely limited.
+\end{itemize}
+
+The motivation behind the \textbf{Segment Anything Model (SAM)} represents a culmination of these goals. As stated by its creators, ``In this work, our goal is to build a foundation model for image segmentation'' \cite{kirillov2023segment}. The aim was not to create another specialized model but a generalist one. They sought ``to develop a promptable model and pre-train it on a broad dataset using a task that enables powerful generalization. With this model, we aim to solve a range of downstream segmentation problems on new data distributions using prompt engineering'' \cite{kirillov2023segment}. This ambition marks a shift towards creating a single, powerful tool that can handle any segmentation request on any image, democratizing the technology and accelerating research and application development.
+
+
+\subsection{Problem Statement}
+Image segmentation is the task of grouping pixels that belong to a common semantic object and separating them from other objects and the background. A "semantic object" refers to an entity that is meaningful and recognizable within a given context, such as a car, a person, a tree, or even amorphous regions like "sky" or "road".
+
+The core principle of segmentation is guided by two criteria: pixels within the same group should be as similar as possible, while pixels belonging to different groups should be as distinct as possible. This "similarity" can be defined by various attributes, including color, intensity, texture, or learned semantic features. In essence, the task simulates the human cognitive ability to transform raw, unstructured visual data into a structured representation of distinct entities.
+
+For a modern promptable segmentation system like SAM, the problem can be formally defined by its inputs and outputs.
+\begin{itemize}
+	\item \textbf{Input:} An image and a "visual prompt" that specifies the object of interest. This prompt can take various forms, such as a point (or multiple points) on the object, a bounding box enclosing it, or even a rough mask.
+	\item \textbf{Output:} One or more segmentation masks for the object(s) indicated by the prompt, along with a confidence score for each mask. The ability to output multiple masks is crucial for handling ambiguity (e.g., a single point on a shirt could refer to the shirt or the person wearing it).
+\end{itemize}
+
+The general framework for such a system, as shown in Fig. \ref{fig:framework}, typically consists of two main stages: a powerful visual encoder that processes the input image to create a high-dimensional feature representation, and a lightweight decoder that takes this representation along with an encoded prompt to rapidly generate the final mask.
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.7\linewidth]{framework.png}
+	\caption{A general framework for a promptable segmentation model. An image encoder computes a feature embedding for the input image. A prompt encoder embeds the user's prompt (e.g., points, boxes). A lightweight mask decoder combines these embeddings to predict segmentation masks in real-time.}
+	\label{fig:framework}
+\end{figure}
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=\linewidth]{geo_dist.png}
+	\caption{Estimated geographic distribution of SA-1B images. The map shows that most countries are represented with over 1000 images, making it one of the most geographically diverse datasets for computer vision. (Source: \cite{kirillov2023segment})}
+	\label{fig:geo_dist}
+\end{figure}
 \begin{figure}[H]
 	\centering
 	\includegraphics{fig1.png} % Replace with your desired image and size
@@ -118,8 +174,16 @@ Segmentation, Online Learning, Representation Learning
 
 
 \subsection{Contribution}
-\lipsum[10]
+The work on the Segment Anything Model (SAM) introduced several pivotal contributions to the field. As summarized by the authors, ``Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B) that make this leap possible'' \cite{kirillov2023segment}.
 
+A key contribution is the \textbf{SA-1B dataset}, which remains the largest segmentation dataset to date. Its key features include:
+\begin{itemize}
+	\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+	\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
+	\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in Fig. \ref{fig:geo_dist}. This helps mitigate geographical bias often present in large-scale datasets.
+\end{itemize}
+
+The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
 
 \section{Related Works}
 
