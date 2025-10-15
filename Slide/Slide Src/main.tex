@@ -10,6 +10,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{csquotes}
 
 \usepackage[english]{babel}
 
@@ -19,7 +20,7 @@
 \setbeamertemplate{caption}[numbered]
 \usepackage[font=small,labelfont=bf]{caption}
 \author[Group MNIST]{Group MNIST}
-\title{Seminar: []}
+\title{Seminar: Image Segmentation Based on Visual Prompt}
 % Informe o seu email de contato no comando a seguir
 % Por exemplo, alcebiades.col@ufes.br
 \newcommand{\email}{email}
@@ -70,21 +71,177 @@
     \end{center}
 \end{frame}
 
-
-
 \begin{frame}{Table of contents}
-\tableofcontents 
+\tableofcontents
 \end{frame}
 
+\section{Introduction}
+\subsection{General Background}
+\begin{frame}{General Background}
+	Image segmentation is a fundamental task in computer vision that involves partitioning a digital image into multiple	segments or sets of pixels, often corresponding to different objects or parts of objects.
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.4\linewidth]{imagens/segmentation_example.png}
+	\end{figure}
+\end{frame}
 
-\section{Introduction \& Why Hopfield Network?}
-\subsection{Introduction}
+\begin{frame}{General Background}
+	The history of this field can be broadly divided into three distinct eras.
+	\begin{itemize}
+		\item \textbf{Pre-Deep Learning Era (c. 1970s–2000s)}
+		\item \textbf{Deep Learning Era (c. 2010s)}
+		\item \textbf{Modern Research Directions}
+	\end{itemize}
+\end{frame}
 
-\section{Placeholder}
+\begin{frame}{Pre-Deep Learning Era (c. 1970s-2000s)}
+	Segmentation methods were primarily based on handcrafted features and mathematical models. These techniques required significant domain knowledge and focused on pixel-level properties such as intensity, color, texture, and edges. \pause \\
+	Prominent methods from
+	this period include:
+	\begin{itemize}
+		\item Canny Edge Detection
+		\item Active Contour Models (Snakes)
+		\item K-Means Clustering
+	\end{itemize} \pause
+	These methods, while foundational, relied on heuristics and low-level features, often struggling with complex scenes and semantic understanding.
+\end{frame}
 
-\section{Placeholder}
+\begin{frame}{Deep Learning Era (c. 2010s)}
+	The advent of deep learning, particularly Convolutional Neural Networks (CNNs), revolutionized image segmentation. These models could automatically learn hierarchical features from data, eliminating the need for manual feature engineering. \pause \\
+	Key milestones include:
+	\begin{itemize}
+		\item Fully Convolutional Networks (FCN)
+		\item U-Net
+		\item Mask R-CNN
+	\end{itemize}
+\end{frame}
 
-\section{Placeholder}
+\begin{frame}{Modern Research Directions}
+	Current research continues to build upon these deep learning foundations, exploring new architectures and learning paradigms for greater accuracy, efficiency, and generalization.
+	\begin{itemize}
+		\item Transformer-Based Architectures
+		\item Foundation Models
+		\item Self-Supervised Learning
+	\end{itemize}
+\end{frame}
+
+\subsection{Motivation}
+\begin{frame}{Motivation}
+	The drive to advance image segmentation stems from both scientific inquiry and practical necessity. \\
+	Scientifically, segmentation addresses a fundamental question in perception: while image classification tells us what is in an image, segmentation answers where it is, down to the pixel level. \\
+	Practically, segmentation is an enabling technology for a multitude of real-world applications.
+\end{frame}
+
+\begin{frame}{Motivation}
+	
+	\begin{columns}[T]
+		
+		% --- LEFT COLUMN ---
+		\begin{column}{0.5\textwidth}
+			
+			% TOP-LEFT CELL
+			\textbf{Autonomous Driving}\par
+			\begin{center}
+				\includegraphics[height=0.25\textheight]{imagens/autonomous.jpg}
+				\includegraphics[height=0.25\textheight]{imagens/autonomous_2.jpg}
+			\end{center}
+			
+			\vfill % Adds space between the top and bottom cells
+			
+			% BOTTOM-LEFT CELL
+			\textbf{Real-World Data Complexity}\par
+			\begin{center}
+				\includegraphics[height=0.25\textheight]{imagens/surveillance.jpg}
+				\includegraphics[height=0.25\textheight]{imagens/surveillance_2.png}
+			\end{center}
+			
+		\end{column}
+		
+		% --- RIGHT COLUMN ---
+		\begin{column}{0.5\textwidth}
+			
+			% TOP-RIGHT CELL
+			\textbf{Medical Imaging}\par
+			\begin{center}
+				\includegraphics[height=0.25\textheight]{imagens/medical.png}
+				\includegraphics[height=0.25\textheight]{imagens/medical_2.png}
+			\end{center}
+			
+			\vfill % Adds space between the top and bottom cells
+			
+			% BOTTOM-RIGHT CELL
+			\textbf{Downstream Vision Tasks}\par
+			\begin{center}
+				\includegraphics[height=0.25\textheight]{imagens/detection_tracking.jpeg}
+				\includegraphics[height=0.25\textheight]{imagens/tracking.jpg}
+			\end{center}
+			
+		\end{column}
+		
+	\end{columns}
+\end{frame}
+
+\begin{frame}{Motivation}
+	\textbf{Segment Anything Model (SAM)}
+	\begin{displayquote}
+		“In this work, our goal is to build a foundation model
+		for image segmentation.” \cite{placeholder}
+	\end{displayquote}
+	With this model, we aim to solve a range of downstream segmentation problems on new data distributions using prompt engineering.
+	
+\end{frame}
+
+\subsection{Problem Statement}
+\begin{frame}{Problem Statement}
+	Image segmentation is the task of grouping pixels that belong to a common semantic object and separating them from other objects and the background. \\
+	The core principle of segmentation is guided by two criteria: pixels within the same group should be as similar as possible, while pixels belonging to different groups should be as distinct as possible. \\
+	In essence, the task simulates the human cognitive ability to transform raw, unstructured visual data into a structured representation of distinct entities.
+\end{frame}
+
+\begin{frame}{Problem Statement}
+	For a modern promptable segmentation system like \textbf{SAM}, the problem can be formally defined by its inputs and outputs.
+	
+	\begin{columns}[T]
+		\begin{column}{0.5\textwidth}
+			\begin{itemize}
+				\item \textbf{Input:}  An image and a ”visual prompt” that specifies the object of interest. This prompt can take various forms, such as a point (or multiple points) on the object, a bounding box enclosing it, or even a rough mask.
+				\item \textbf{Output:} One or more segmentation masks for the object(s) indicated by the prompt, along with a confidence
+				score for each mask. The ability to output multiple masks
+				is crucial for handling ambiguity.
+			\end{itemize}
+		\end{column}
+		
+		\begin{column}{0.5\textwidth}
+			\includegraphics[width=0.9\textwidth]{imagens/framework.png}
+		\end{column}
+	\end{columns}
+\end{frame}
+
+\subsection{Contribution}
+\begin{frame}{Contribution}
+	\begin{displayquote}
+		"Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B)"
+	\end{displayquote}
+		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. Its key features include:
+		\begin{itemize}
+			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
+			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in Fig. 2. This helps mitigate geographical bias often present in large-scale datasets.
+		\end{itemize}
+\end{frame}
+
+\begin{frame}{Contribution}
+	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
+\end{frame}
+\section{Related Works}
+
+\section{Methodology}
+
+\section{Implementation \& Experiment}
+
+\section{Conclusion}
+
+\section{Discussion}
 
 %----------------------------------------------
 
@@ -108,7 +265,7 @@
 %     \end{itemize}
 % \end{frame}
 \section{References}
-\begin{frame}[allowframebreaks]{6. References}
+\begin{frame}[allowframebreaks]{References}
     \bibliography{./references}
 \end{frame}
 
