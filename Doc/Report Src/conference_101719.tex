@@ -10,10 +10,40 @@
 \usepackage{float}
 \usepackage{multirow}
 \usepackage{array}
- \usepackage[numbers]{natbib}
- \usepackage{lipsum}
+\usepackage{listings}
+\usepackage[numbers]{natbib}
+\usepackage{lipsum}
+ 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+
+\lstset{style=mystyle}
+
+
 \begin{document}
 
 \title{Image Segmentation Based on Visual Prompt\\
@@ -186,16 +216,159 @@ A key contribution is the \textbf{SA-1B dataset}, which remains the largest segm
 The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
 
 \section{Related Works}
+\subsection{Traditional Methods}
+\subsubsection{K-Means Clustering}
+	K-Means is an unsupervised clustering algorithm used to segment regions of interest from the background \cite{nameirakpam2015kmeanssubtractive}. It was first introduced by Hartigan in 1975, and its goal is to partition $M$ points in an $N$-dimensional space into $K$ clusters such that the within-cluster sum of squares is minimized \cite{hartigan1979kmeans}.
+	
+	\begin{enumerate}
+		\item \textbf{Mechanics:} 
+			The algorithm iteratively assigns each pixel to the nearest cluster centroid and updates centroids based on current assignments. K-Means algorithm seeks a local optimum rather than a global one. Data points are divided into groups by assigning each of them to the nearest centroid. The goal is to find a solution such that moving any point from one cluster to another does not reduce the within-cluster sum of squares \cite{hartigan1979kmeans}.
+						
+		\item \textbf{Methodology:}
+			Let $p_(x,y)$ be a pixel at position $(x, y)$ to be cluster and $c_k$ be the centroid of cluster $k$.
+			Let $C_k$ be the set of pixels assigned to cluster $k$, where $(x, y)$ indexes the image pixels and $k \in \{1, 2, \ldots, K\}$.
+			
+			For each pixel, compute its distances to all cluster centroids:
+			\[
+	    	D_{x,y} = \{\, \| p_{x,y} - c_k \| \mid k \in \{1, 2, \ldots, K\} \}
+			\]
+			
+	    	Assign the pixel to the cluster with the smallest distance:
+			\begin{gather*}
+				n = \operatorname*{arg\,min}_k \| p_{x,y} - c_k \|, \\
+				C_n = C_n \cup \{p_{x,y}\}
+			\end{gather*}
+			
+			After all pixels are assigned, update each centroid as the mean of the pixels belonging to it:
+			\[
+			c_k = \frac{1}{|C_k|} \sum_{p_{x,y} \in C_k} p_{x,y}
+			\]
+			Repeat the assignment and update steps until the centroids no longer change significantly or a maximum number of iterations is reached.
+			
+		\item \textbf{Input:} 
+			An image represented by $M$ pixels, each with $N$ features (e.g., RGB color components or combined color–spatial features), forming an $M \times N$ matrix. The algorithm also takes $K$ initial cluster centroids in the same $N$-dimensional feature space.
+		
+		\item \textbf{Output:} 
+		\begin{itemize}
+			\item A label map of size $M \times 1$ indicating the cluster each pixel belongs to.  
+			\item A vector of size $K \times 1$ containing the number of pixels in each cluster.  
+			\item A $K \times N$ matrix of the final cluster centroids.  
+		\end{itemize}
+		
+			
+		\item \textbf{Algorithm:}
+		\begin{lstlisting}
+			1. Initialize cluster centroids
+			2. For each pixel (x, y):
+				Compute its distance to all centroids
+				Assign it to the cluster with the smallest distance
+			3. For each cluster:
+				Recalculate the centroid as the mean of all pixels assigned to it
+			4. Repeat steps 2 and 3 until convergence
+		\end{lstlisting}
+	\end{enumerate}
+
+%\subsubsection{Mean Shift Clustering}
+%	Mean Shift is a non-parametric clustering algorithm often used for image segmentation and object detection. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.
+%	
+%	\begin{enumerate}
+%		\item \textbf{Mechanics:}  
+%		The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.
+%		
+%		\item \textbf{Methodology:}  
+%		Let $p_{x,y}$ denote the feature vector of the pixel at position $(x, y)$. The goal is to move $p_{x,y}$ iteratively toward the local density maximum according to:
+%		\[
+%		m(p_{x,y}) = \frac{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)p_j}{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)}
+%		\]
+%		where:
+%		\begin{itemize}
+%			\item $S$ is the set of all data points (pixels),
+%			\item $K(\cdot)$ is a kernel function (commonly a Gaussian kernel),
+%			\item $h$ is the bandwidth controlling the kernel width.
+%		\end{itemize}
+%		
+%		The mean shift vector is defined as:
+%		\[
+%		\Delta p_{x,y} = m(p_{x,y}) - p_{x,y}
+%		\]
+%		and the pixel is updated iteratively:
+%		\[
+%		p_{x,y}^{(t+1)} = p_{x,y}^{(t)} + \Delta p_{x,y}
+%		\]
+%		until convergence (i.e., when $\|\Delta p_{x,y}\| < \epsilon$ for a small threshold $\epsilon$).  
+%		After convergence, all pixels that converge to the same mode are assigned to the same cluster.
+%		
+%		\item \textbf{Input:}  
+%			An image represented by $M$ pixels, each having an $N$-dimensional feature vector (e.g., color, intensity, or color–spatial components).  
+%			The algorithm also requires a kernel bandwidth parameter $h$ that defines the size of the neighborhood considered for density estimation.
+%		
+%		\item \textbf{Output:}  
+%		\begin{itemize}
+%			\item A segmented image in which each cluster corresponds to a region of similar features.  
+%			\item The set of mode locations that represent cluster centers.  
+%		\end{itemize}
+%		
+%		\item \textbf{Algorithm:}
+%		\begin{lstlisting}
+%			1. For each pixel (x, y), initialize p_(x,y) with its feature vector.
+%			2. Repeat until convergence:
+%			a. Compute the mean shift vector $\Delta$ p_(x,y)
+%			using nearby pixels within bandwidth h.
+%			b. Update p_(x,y) = p_(x,y) + $\Delta$ p_(x,y).
+%			3. After convergence, group pixels whose final
+%			positions fall within the same mode region.
+%			4. Assign each group as one cluster.
+%		\end{lstlisting}
+%	\end{enumerate}
+%
+
+\subsubsection{Binary Thresholding}
+Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.
+
+\begin{enumerate}
+	\item \textbf{Mechanics:} Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.
+	
+	\item \textbf{Methodology:}
+	For each pixel $(x, y)$ in the image:
+	\begin{enumerate}
+		\item Compare $I(x, y)$ with the threshold value $T$.
+		\item Assign the binary value based on the comparison rule.
+	\end{enumerate}
+	$T$ can be predefined or determined adaptively using methods such as Otsu’s algorithm, which selects the threshold that minimizes the intra-class variance between the foreground and background.
+	
+	\item \textbf{Input:} A grayscale image, where $(x, y)$ denotes the pixel coordinates, $I(x, y) \in [0, 255]$ represents its intensity, a threshold value $T$ to determine the output pixel at $(x, y)$.
+	
+	\item \textbf{Output:} A binary image $B$, where
+	\[
+	B(x, y) = 
+	\begin{cases} 
+		1, & \text{if } I(x, y) \ge T, \\
+		0, & \text{otherwise.}
+	\end{cases}
+	\]
+	
+	\item \textbf{Algorithm:}
+	\begin{lstlisting}
+		For each pixel (x, y):
+		If I(x, y) >= T:
+			B(x, y) = 1
+		Else:
+			B(x, y) = 0
+	\end{lstlisting}
+\end{enumerate}
+
+
+\subsection{Modern Methods}
 
 \section{Methodology}
 
-\section{Impletementation \& Experiment}
+\section{Implementation \& Experiment}
 
 \section{Conclusion}
 
 \section{Discussion}
 \subsection{Limitations}
-\subsection{Future Work}\cite{Makarov2022}
+\subsection{Future Work} %\cite{Makarov2022}
 
 \bibliographystyle{IEEEtran} % Or IEEEtranN if using natbib
 \bibliography{references}    % Replace 'references' with the name of your .bib file
