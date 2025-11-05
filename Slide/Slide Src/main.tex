@@ -65,8 +65,8 @@
 \begin{frame}{Members}
     \begin{center}
       \begin{tabular}{@{}l@{}}
-          \tabitem 23122008 - Mai Duc Minh Huy\\
-          \tabitem 23122024 - Chung Tin Dat
+          23122008 - Mai Duc Minh Huy\\
+          23122024 - Chung Tin Dat
         \end{tabular}
     \end{center}
 \end{frame}
@@ -231,9 +231,146 @@
 \end{frame}
 
 \begin{frame}{Contribution}
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{imagens/geo_dist.png}
+	\end{center}
 	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
 \end{frame}
+
 \section{Related Works}
+\subsection{Traditional Methods}
+\begin{frame}{Traditional Methods}
+	There are different techniques for image segmentation like threshold
+	based, edgebased, cluster based, neuralnetwork based
+	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based. One of the most efficient methods is the clustering method.
+\end{frame}
+
+\begin{frame}{K-Means Clustering}
+	K-Means is an unsupervised clustering algorithm used to segment regions of interest from the background \cite{nameirakpam2015kmeanssubtractive}. It was first introduced by Hartigan in 1975, and its goal is to partition $M$ points in an $N$-dimensional space into $K$ clusters such that the within-cluster sum of squares is minimized \cite{hartigan1979kmeans}.\\
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{imagens/kmeans.jpg}
+	\end{center}
+\end{frame}
+
+\begin{frame}{K-Means Clustering}
+	The algorithm iteratively assigns each pixel to the nearest cluster centroid and updates centroids based on current assignments. K-Means algorithm seeks a local optimum rather than a global one. Data points are divided into groups by assigning each of them to the nearest centroid. The goal is to find a solution such that moving any point from one cluster to another does not reduce the within-cluster sum of squares \cite{hartigan1979kmeans}.\\
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{imagens/kmeans2.jpg}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Mean Shift Clustering}
+	Mean Shift is a non-parametric clustering algorithm, which falls into unsupervised clustering category. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.\\
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{imagens/meanshift.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Mean Shift Clustering}
+	The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.\\
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{imagens/meanshift2.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Binary Threshold}
+	Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/binarythreshold.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Binary Threshold}
+	Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.\\
+	\begin{center}
+		\includegraphics[width=0.9\textwidth]{imagens/binarythreshold2.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{U-Net}
+	U-Net, proposed by Ronneberger et al. in 2015, features a symmetric encoder-decoder architecture with extensive skip connections \cite{ronneberger2015unet}. Originally designed for biomedical image segmentation, U-Net achieves high accuracy even with limited training data.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/unet.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{U-Net}
+	FCN transforms classification networks (e.g., VGG, ResNet) into fully convolutional architectures by replacing dense layers with $1 \times 1$ convolutions. The network produces coarse feature maps through successive pooling, then upsamples them back to the original image resolution using transposed convolutions (deconvolution). Skip connections combine deep semantic features with shallow appearance features to recover spatial details lost during downsampling.\\
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{imagens/unet2.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Mask R-CNN}
+	Mask R-CNN, introduced by He et al. in 2017, extends Faster R-CNN for instance segmentation by adding a parallel branch for predicting segmentation masks \cite{he2017mask}. This architecture excels at detecting and segmenting individual object instances.
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/maskrcnn.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Mask R-CNN}
+	Mask R-CNN operates in two stages. First, a Region Proposal Network (RPN) generates candidate object bounding boxes. Second, for each region of interest (RoI), the network performs three parallel tasks: class prediction, bounding box regression, and mask prediction. The key innovation is RoIAlign, which preserves spatial alignment during RoI pooling by using bilinear interpolation, crucial for pixel-accurate mask prediction.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/maskrcnn.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{DeepLab}
+	DeepLab, developed by Chen et al., employs atrous (dilated) convolution and Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale contextual information without reducing spatial resolution \cite{chen2017deeplab}. DeepLabv3+ further incorporates an encoder-decoder structure.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/deeplab.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{DeepLab}
+	DeepLab uses atrous convolution to expand the receptive field without increasing parameters or reducing resolution. The atrous rate $r$ controls the spacing between kernel weights. ASPP applies parallel atrous convolutions with different rates to capture objects at multiple scales. The encoder-decoder structure (in DeepLabv3+) first extracts features, then gradually recovers spatial details through the decoder with skip connections.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/deeplab.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Transformer-Based Segmentation}
+	Vision Transformers (ViTs) adapt the self-attention mechanism from NLP to computer vision. TransUNet, introduced by Chen et al. in 2021, combines Transformers with U-Net architecture for medical image segmentation \cite{chen2021transunet}.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/transunet.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Transformer-Based Segmentation}
+	TransUNet uses a CNN to extract initial features, then patches the feature map and processes it through Transformer encoder layers. The self-attention mechanism captures long-range dependencies between image patches, overcoming the limited receptive field of CNNs. The Transformer output is reshaped and fed into a CNN decoder similar to U-Net, with skip connections from the CNN encoder for recovering spatial details.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/transunet.png}
+	\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Recurrent Neural Networks for Segmentation}
+	RNNs, particularly Long Short-Term Memory (LSTM) networks, have been applied to image segmentation to model spatial dependencies and context \cite{visin2015rnn}. ReNet and related architectures process images sequentially in horizontal and vertical sweeps.\\
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{imagens/rnn.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Recurrent Neural Networks for Segmentation}
+	RNN-based segmentation treats the image as a sequence, processing it row-by-row or with overlapping patches. Four RNN layers sweep the image in different directions (left-to-right, right-to-left, top-to-bottom, bottom-to-top) to capture context from all spatial neighbors. The hidden states from all four directions are concatenated to form a rich contextual representation for each pixel. Multiple ReNet layers can be stacked to increase the receptive field.\\
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{imagens/rnn.png}
+	\end{center}
+\end{frame}
+
 
 \section{Methodology}
 

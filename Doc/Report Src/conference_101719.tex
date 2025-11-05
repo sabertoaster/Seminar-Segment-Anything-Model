@@ -268,59 +268,59 @@ The contribution of this report is to provide a comprehensive survey and structu
 		\end{lstlisting}
 	\end{enumerate}
 
-%\subsubsection{Mean Shift Clustering}
-%	Mean Shift is a non-parametric clustering algorithm often used for image segmentation and object detection. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.
-%	
-%	\begin{enumerate}
-%		\item \textbf{Mechanics:}  
-%		The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.
-%		
-%		\item \textbf{Methodology:}  
-%		Let $p_{x,y}$ denote the feature vector of the pixel at position $(x, y)$. The goal is to move $p_{x,y}$ iteratively toward the local density maximum according to:
-%		\[
-%		m(p_{x,y}) = \frac{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)p_j}{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)}
-%		\]
-%		where:
-%		\begin{itemize}
-%			\item $S$ is the set of all data points (pixels),
-%			\item $K(\cdot)$ is a kernel function (commonly a Gaussian kernel),
-%			\item $h$ is the bandwidth controlling the kernel width.
-%		\end{itemize}
-%		
-%		The mean shift vector is defined as:
-%		\[
-%		\Delta p_{x,y} = m(p_{x,y}) - p_{x,y}
-%		\]
-%		and the pixel is updated iteratively:
-%		\[
-%		p_{x,y}^{(t+1)} = p_{x,y}^{(t)} + \Delta p_{x,y}
-%		\]
-%		until convergence (i.e., when $\|\Delta p_{x,y}\| < \epsilon$ for a small threshold $\epsilon$).  
-%		After convergence, all pixels that converge to the same mode are assigned to the same cluster.
-%		
-%		\item \textbf{Input:}  
-%			An image represented by $M$ pixels, each having an $N$-dimensional feature vector (e.g., color, intensity, or color–spatial components).  
-%			The algorithm also requires a kernel bandwidth parameter $h$ that defines the size of the neighborhood considered for density estimation.
-%		
-%		\item \textbf{Output:}  
-%		\begin{itemize}
-%			\item A segmented image in which each cluster corresponds to a region of similar features.  
-%			\item The set of mode locations that represent cluster centers.  
-%		\end{itemize}
-%		
-%		\item \textbf{Algorithm:}
-%		\begin{lstlisting}
-%			1. For each pixel (x, y), initialize p_(x,y) with its feature vector.
-%			2. Repeat until convergence:
-%			a. Compute the mean shift vector $\Delta$ p_(x,y)
-%			using nearby pixels within bandwidth h.
-%			b. Update p_(x,y) = p_(x,y) + $\Delta$ p_(x,y).
-%			3. After convergence, group pixels whose final
-%			positions fall within the same mode region.
-%			4. Assign each group as one cluster.
-%		\end{lstlisting}
-%	\end{enumerate}
-%
+\subsubsection{Mean Shift Clustering}
+	Mean Shift is a non-parametric clustering algorithm, which falls into unsupervised clustering category. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.
+	
+	\begin{enumerate}
+		\item \textbf{Mechanics:}  
+		The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.
+		
+		\item \textbf{Methodology:}  
+		Let $p_{x,y}$ denote the feature vector of the pixel at position $(x, y)$. The goal is to move $p_{x,y}$ iteratively toward the local density maximum according to:
+		\[
+		m(p_{x,y}) = \frac{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)p_j}{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)}
+		\]
+		where:
+		\begin{itemize}
+			\item $S$ is the set of all data points (pixels),
+			\item $K(\cdot)$ is a kernel function (commonly a Gaussian kernel),
+			\item $h$ is the bandwidth controlling the kernel width.
+		\end{itemize}
+		
+		The mean shift vector is defined as:
+		\[
+		\Delta p_{x,y} = m(p_{x,y}) - p_{x,y}
+		\]
+		and the pixel is updated iteratively:
+		\[
+		p_{x,y}^{(t+1)} = p_{x,y}^{(t)} + \Delta p_{x,y}
+		\]
+		until convergence.
+		After convergence, all pixels that converge to the same mode are assigned to the same cluster.
+		
+		\item \textbf{Input:}  
+			An image represented by $M$ pixels, each having an $N$-dimensional feature vector.  
+			The algorithm also requires a kernel bandwidth parameter $h$ that defines the size of the neighborhood considered for density estimation.
+		
+		\item \textbf{Output:}  
+		\begin{itemize}
+			\item A segmented image in which each cluster corresponds to a region of similar features.  
+			\item The set of mode locations that represent cluster centers.  
+		\end{itemize}
+		
+		\item \textbf{Algorithm:}
+		\begin{lstlisting}[mathescape=true]
+			1. For each pixel (x, y):
+				Initialize $p_{x,y}$ with its feature vector
+			2. Repeat until convergence:
+				a. Compute the mean shift vector $\Delta p_{x,y}$
+				using nearby pixels within bandwidth h
+				b. Update $p_{x,y} = p_{x,y} + \Delta p_(x,y)$
+			3. After convergence, group pixels whose final positions fall within the same mode region
+			4. Assign each group as one cluster
+		\end{lstlisting}
+	\end{enumerate}
+
 
 \subsubsection{Binary Thresholding}
 Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.
