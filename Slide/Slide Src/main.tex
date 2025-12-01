@@ -199,6 +199,25 @@
 \end{frame}
 
 \begin{frame}{Problem Statement}
+	Let $\Omega \subset R ^2$ be the image domain and $I: \Omega \rightarrow R ^k$ the image.\\
+	A segmentation is a partition\\
+	$\Omega = \cup _{i=1}^K \Omega _i \qquad \Omega _i \cap \Omega _j = \emptyset$ for $i \ne j$
+
+	such that pixels within each region share similar properties according to some criterion.
+\end{frame}
+
+\begin{frame}{Problem Statement}
+	For a traditional image segmentation method, the task can be described by its inputs and outputs.\\
+	\begin{itemize}
+		\item \textbf{Input:}  An image together with a specified number of classes. Depending on the method, additional choices such as a similarity measure or clustering criterion may be required.
+		
+		\item \textbf{Output:} A segmentation result in which each pixel is assigned to one of the given classes. The output is typically represented as a label map where each pixel is assigned to a class of the same spatial size as the input image.
+	\end{itemize}
+	
+\end{frame}
+	
+
+\begin{frame}{Problem Statement}
 	For a modern promptable segmentation system like \textbf{SAM}, the problem can be formally defined by its inputs and outputs.
 	
 	\begin{columns}[T]
@@ -212,7 +231,11 @@
 		\end{column}
 		
 		\begin{column}{0.5\textwidth}
-			\includegraphics[width=0.9\textwidth]{imagens/framework.png}
+			\begin{figure}
+				\includegraphics[width=0.8\textwidth]{imagens/framework.png}
+				\caption{\textbf{Model:} Segment Anything Model \textbf{(SAM)}}
+			\end{figure}
+
 		\end{column}
 	\end{columns}
 \end{frame}
@@ -226,19 +249,113 @@
 		\begin{itemize}
 			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
 			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
-			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in Fig. 2. This helps mitigate geographical bias often present in large-scale datasets.
+			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
 		\end{itemize}
 \end{frame}
 
 \begin{frame}{Contribution}
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{imagens/geo_dist.png}
-	\end{center}
+	\begin{figure}
+		\includegraphics[width=0.9\textwidth]{imagens/geo_dist.png}
+		\caption{Geographical Diversity of the Dataset}
+		\label{fig:geo}
+	\end{figure}
+\end{frame}
+
+\begin{frame}{Contribution}
 	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
 \end{frame}
 
 \section{Related Works}
 \subsection{Traditional Methods}
+
+\begin{frame}{Traditional Methods} % Mechanics
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Methods} & \textbf{Mechanics} \\ \hline
+			K-means clustering & Iteratively assigns each pixel to the nearest cluster center and updates centers using the mean of assigned pixels. \\ \hline
+			Mean shift clustering & Moves each pixel toward the densest region of the feature space using kernel density estimation until convergence. \\ \hline
+			Binary thresholding & Compares each pixel intensity with a chosen threshold and assigns it to foreground or background. \\ \hline
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Traditional Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+			\hline
+			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Stage 1: Input preparation} & \textbf{Stage 2: Parameter or criterion selection} \\ \hline
+			
+			K-means clustering 
+			& Uses pixel features such as intensity, color or coordinates 
+			& Select the number of clusters K \\ \hline
+			
+			Mean shift clustering 
+			& Maps pixels into a feature space and prepares a kernel window 
+			& Choose kernel bandwidth defining neighborhood size \\ \hline
+			
+			Binary thresholding 
+			& Uses pixel intensity values directly 
+			& Choose threshold value manually or automatically \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Traditional Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+			\hline
+			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Stage 3: Decision rule or region formation} & \textbf{Stage 4: Final labeling} \\ \hline
+			
+			K-means clustering 
+			& Assign pixel to the nearest cluster center and refine iteratively 
+			& Output cluster label for each pixel \\ \hline
+			
+			Mean shift clustering 
+			& Shift pixel toward density peak and group by convergence mode 
+			& Assign each pixel to the mode it reaches \\ \hline
+			
+			Binary thresholding 
+			& Compare intensity with threshold and classify each pixel 
+			& Produce a binary mask with two classes \\ \hline
+			
+		\end{tabular}
+	\end{table}
+	
+\end{frame}
+
+\begin{frame}{Traditional Methods} % Contribution
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Methods} & \textbf{Contribution} \\ \hline
+			K-means clustering & Introduced a simple and widely used baseline that works across many image types and served as a foundation for later clustering methods. \\ \hline
+			Mean shift clustering & Demonstrated a nonparametric density based approach that does not require specifying the number of clusters and influenced modern segmentation research. \\ \hline
+			Binary thresholding & Provided an efficient method for separating foreground and background and remains widely used in preprocessing and simple segmentation tasks. \\ \hline
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Traditional Methods} % Limitation
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Methods} & \textbf{Limitations} \\ \hline
+			K-means clustering & Requires the number of classes beforehand. Sensitive to initialization. Converges to local minima. Performs poorly with non convex clusters. \\ \hline
+			Mean shift clustering & High computational cost for large images. Sensitive to kernel bandwidth. May over segment when parameters are not tuned. \\ \hline
+			Binary thresholding & Works only when intensity separation is clear. Sensitive to lighting changes. Cannot handle multiple classes without extension. \\ \hline
+		\end{tabular}
+	\end{table}
+\end{frame}
+
 \begin{frame}{Traditional Methods}
 	There are different techniques for image segmentation like threshold
 	based, edgebased, cluster based, neuralnetwork based
@@ -255,7 +372,7 @@
 \begin{frame}{K-Means Clustering}
 	The algorithm iteratively assigns each pixel to the nearest cluster centroid and updates centroids based on current assignments. K-Means algorithm seeks a local optimum rather than a global one. Data points are divided into groups by assigning each of them to the nearest centroid. The goal is to find a solution such that moving any point from one cluster to another does not reduce the within-cluster sum of squares \cite{hartigan1979kmeans}.\\
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{imagens/kmeans2.jpg}
+		\includegraphics[width=0.3\textwidth]{imagens/kmeans2.jpg}
 	\end{center}
 \end{frame}
 
@@ -292,6 +409,116 @@
 \end{frame}
 
 
+\subsection{Deep Learning Methods}
+
+\begin{frame}{Deep Learning Methods} % Mechanics
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Mechanics} \\ \hline
+			
+			Fully connected networks 
+			& Treat the image as a long vector and process it through dense layers with no spatial preservation. \\ \hline
+			
+			U-Net 
+			& Uses an encoder to compress features and a decoder with skip connections to restore spatial detail for pixel level prediction. \\ \hline
+			
+			Mask R-CNN 
+			& Extends Faster R CNN by adding a mask prediction branch that produces instance level segmentation for each detected object. \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Deep Learning Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+			\hline
+			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Input preparation} & \textbf{Core mechanism} \\ \hline
+			
+			Fully connected networks 
+			& Flatten the image into a vector of pixel values 
+			& Apply dense layers to classify each pixel or entire image regions \\ \hline
+			
+			U-Net 
+			& Feed the full image or patches as tensor input 
+			& Use encoder decoder with skip connections to learn detailed spatial features \\ \hline
+			
+			Mask R-CNN 
+			& Use image as input along with region proposals from RPN 
+			& Combine feature backbone, region alignment and mask head for instance level masks \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Deep Learning Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+			\hline
+			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Training process} & \textbf{Output generation} \\ \hline
+			
+			Fully connected networks 
+			& Train with backpropagation on flattened pixels using classification loss 
+			& Produce class probabilities for each pixel then reshape to segmentation map \\ \hline
+			
+			U-Net 
+			& Train with pixel wise loss while leveraging skip connections to recover spatial detail 
+			& Generate dense segmentation map matching input resolution \\ \hline
+			
+			Mask R-CNN 
+			& Train multi stage loss for bounding boxes, classes and per instance masks 
+			& Output object bounding boxes, class labels and a separate mask for each instance \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Deep Learning Methods} % Contribution
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Contribution} \\ \hline
+			
+			Fully connected networks 
+			& Provided early neural network baselines for segmentation but highlighted the need for spatially aware architectures. \\ \hline
+			
+			U-Net 
+			& Became one of the most influential architectures in medical imaging and many pixel level tasks due to its skip connection strategy. \\ \hline
+			
+			Mask R-CNN 
+			& Established a strong and widely adopted framework for instance segmentation by unifying detection and mask generation. \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Deep Learning Methods} % Limitation
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Limitations} \\ \hline
+			
+			Fully connected networks 
+			& Large number of parameters, loss of spatial information and poor performance on detailed segmentation. \\ \hline
+			
+			U-Net 
+			& Performance depends on training data scale, can be memory heavy and is less suited for object level separation. \\ \hline
+			
+			Mask R-CNN 
+			& Complex multi stage training pipeline and high computational cost for large images or many objects. \\ \hline
+			
+		\end{tabular}
+	\end{table}
+	
+\end{frame}
 
 \begin{frame}{U-Net}
 	U-Net, proposed by Ronneberger et al. in 2015, features a symmetric encoder-decoder architecture with extensive skip connections \cite{ronneberger2015unet}. Originally designed for biomedical image segmentation, U-Net achieves high accuracy even with limited training data.\\
