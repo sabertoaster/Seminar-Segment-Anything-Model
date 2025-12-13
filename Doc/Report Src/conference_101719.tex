@@ -108,11 +108,15 @@ These methods, while foundational, relied on heuristics and low-level features, 
 The drive to advance image segmentation stems from both scientific inquiry and practical necessity.
 
 Scientifically, segmentation addresses a fundamental question in perception: while image classification tells us \textit{what} is in an image, segmentation answers \textit{where} it is, down to the pixel level. This granular understanding is crucial for emulating the human ability to parse a scene into distinct objects and regions, forming the basis for true visual comprehension.
+% \item Many methods in computer vision rely on segmented regions as inputs. Examples include object detection, recognition, tracking, 3D reconstruction, and medical image analysis. Better segmentation improves the performance of these tasks.
+% \item Segmentation studies connect computational models with how humans interpret scenes. This benefits fields such as cognitive science and computational neuroscience.
 
 Practically, segmentation is an enabling technology for a multitude of real-world applications:
 \begin{itemize}
 	\item \textbf{Autonomous Driving:} Segmenting lanes, pedestrians, vehicles, and traffic signs is critical for safe navigation.
 	\item \textbf{Medical Imaging:} Precise segmentation of tumors, organs, and other anatomical structures is vital for diagnosis, treatment planning, and surgical guidance.
+	\item \textbf{Industrial Inspection:} Tasks such as defect detection, product sorting, and surface analysis depend on precise region separation. Segmentation makes automated inspection more reliable.
+	\item \textbf{Digital Photography:} Image editing, background removal, blur control, and compositing all rely on clean boundaries between objects. Segmentation enables fast and high quality processing.
 	\item \textbf{Real-World Data Complexity:} Segmentation provides a robust way to handle complex scenes with occluded or overlapping objects.
 	\item \textbf{Downstream Vision Tasks:} It serves as a foundational step for numerous other tasks, including object detection, tracking, and detailed semantic scene understanding. Without accurate segmentation, the performance of these downstream applications would be severely limited.
 \end{itemize}

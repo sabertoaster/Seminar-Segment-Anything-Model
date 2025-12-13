@@ -78,11 +78,19 @@
 \section{Introduction}
 \subsection{General Background}
 \begin{frame}{General Background}
-	Image segmentation is a fundamental task in computer vision that involves partitioning a digital image into multiple	segments or sets of pixels, often corresponding to different objects or parts of objects.
-	\begin{figure}
-		\centering
-		\includegraphics[width=0.4\linewidth]{imagens/segmentation_example.png}
-	\end{figure}
+	\begin{columns}
+		\begin{column}{0.6\linewidth}
+			Image segmentation is a fundamental task in computer vision that involves partitioning a digital image into multiple	segments or sets of pixels, often corresponding to different objects or parts of objects.\\
+			The goal is to simplify or change the representation of an image into something that is more meaningful and easier to analyze.
+		\end{column}
+		
+		\begin{column}{0.35\linewidth}
+			\begin{figure}
+				\centering
+				\includegraphics[width=1\linewidth]{imagens/segmentation_example.png}
+			\end{figure}
+		\end{column}
+	\end{columns}
 \end{frame}
 
 \begin{frame}{General Background}
@@ -100,8 +108,9 @@
 	this period include:
 	\begin{itemize}
 		\item Canny Edge Detection
-		\item Active Contour Models (Snakes)
 		\item K-Means Clustering
+		\item Mean Shift Clustering
+		
 	\end{itemize} \pause
 	These methods, while foundational, relied on heuristics and low-level features, often struggling with complex scenes and semantic understanding.
 \end{frame}
@@ -122,13 +131,22 @@
 		\item Transformer-Based Architectures
 		\item Foundation Models
 		\item Self-Supervised Learning
+		\item Visual Prompt Model
 	\end{itemize}
 \end{frame}
 
 \subsection{Motivation}
 \begin{frame}{Motivation}
 	The drive to advance image segmentation stems from both scientific inquiry and practical necessity. \\
-	Scientifically, segmentation addresses a fundamental question in perception: while image classification tells us what is in an image, segmentation answers where it is, down to the pixel level. \\
+	Scientifically,
+	\begin{itemize}
+		\item Segmentation addresses a fundamental question in perception: while image classification tells us what is in an image, segmentation answers where it is, down to the pixel level; segmentation helps reveal how an image is organized by separating it into meaningful regions.
+		\item Many methods in computer vision rely on segmented regions as inputs. Examples include object detection, recognition, tracking, 3D reconstruction, and medical image analysis. Better segmentation improves the performance of these tasks.
+		\item Segmentation studies connect computational models with how humans interpret scenes. This benefits fields such as cognitive science and computational neuroscience.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Motivation}
 	Practically, segmentation is an enabling technology for a multitude of real-world applications.
 \end{frame}
 
@@ -149,7 +167,7 @@
 			\vfill % Adds space between the top and bottom cells
 			
 			% BOTTOM-LEFT CELL
-			\textbf{Real-World Data Complexity}\par
+			\textbf{Surveillance}\par
 			\begin{center}
 				\includegraphics[height=0.25\textheight]{imagens/surveillance.jpg}
 				\includegraphics[height=0.25\textheight]{imagens/surveillance_2.png}
@@ -170,7 +188,7 @@
 			\vfill % Adds space between the top and bottom cells
 			
 			% BOTTOM-RIGHT CELL
-			\textbf{Downstream Vision Tasks}\par
+			\textbf{Object Tracking}\par
 			\begin{center}
 				\includegraphics[height=0.25\textheight]{imagens/detection_tracking.jpeg}
 				\includegraphics[height=0.25\textheight]{imagens/tracking.jpg}
@@ -180,6 +198,76 @@
 		
 	\end{columns}
 \end{frame}
+
+
+\begin{frame}{Motivation}
+	\textbf{Digital Photograph}\\
+	\begin{center}
+		\includegraphics[width=0.5\linewidth]{imagens/photograph_1.png}
+		\includegraphics[width=0.5\linewidth]{imagens/photograph_2.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Motivation}
+	
+	\textbf{Industrial Inspection}\\
+	\begin{center}
+		\begin{columns}
+			\begin{column}{0.3\linewidth}
+				\includegraphics[width=\linewidth]{imagens/industrial_1.jpg}
+			\end{column}
+			
+			\begin{column}{0.7\linewidth}
+				\includegraphics[width=\linewidth]{imagens/industrial_2.jpg}
+			\end{column}
+		\end{columns}
+	\end{center}
+		
+\end{frame}
+
+
+%\begin{frame}{Motivation}
+%	
+%	\begin{columns}[T]
+%		
+%		% --- LEFT COLUMN ---
+%		\begin{column}{0.5\textwidth}
+%			
+%			% TOP-LEFT CELL
+%			\textbf{Industrial Inspection}\par
+%			\begin{center}
+%				\includegraphics[height=0.25\textheight]{imagens/industrial_1.jpg}
+%			\end{center}
+%			
+%			\vfill % Adds space between the top and bottom cells
+%			
+%			% BOTTOM-LEFT CELL
+%			\begin{center}
+%				\includegraphics[height=0.25\textheight]{imagens/industrial_2.jpg}
+%			\end{center}
+%			
+%		\end{column}
+%		
+%		% --- RIGHT COLUMN ---
+%		\begin{column}{0.5\textwidth}
+%			
+%			% TOP-RIGHT CELL
+%			\textbf{Digital Photograph}\par
+%			\begin{center}
+%				\includegraphics[height=0.25\textheight]{imagens/photograph_1.png}
+%			\end{center}
+%			
+%			\vfill % Adds space between the top and bottom cells
+%			
+%			% BOTTOM-RIGHT CELL
+%			\begin{center}
+%				\includegraphics[height=0.25\textheight]{imagens/photograph_2.png}
+%			\end{center}
+%			
+%		\end{column}
+%		
+%	\end{columns}
+%\end{frame}
 
 \begin{frame}{Motivation}
 	\textbf{Segment Anything Model (SAM)}
@@ -201,8 +289,9 @@
 \begin{frame}{Problem Statement}
 	Let $\Omega \subset R ^2$ be the image domain and $I: \Omega \rightarrow R ^k$ the image.\\
 	A segmentation is a partition\\
-	$\Omega = \cup _{i=1}^K \Omega _i \qquad \Omega _i \cap \Omega _j = \emptyset$ for $i \ne j$
-
+	\begin{center}
+		$\Omega = \cup _{i=1}^K \Omega _i \qquad \Omega _i \cap \Omega _j = \emptyset$ for $i \ne j$
+	\end{center}
 	such that pixels within each region share similar properties according to some criterion.
 \end{frame}
 
@@ -268,6 +357,11 @@
 \section{Related Works}
 \subsection{Traditional Methods}
 
+\begin{frame}{Traditional Methods}
+	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based.\\
+%	One of the most efficient methods is the clustering method.
+\end{frame}
+
 \begin{frame}{Traditional Methods} % Mechanics
 	\begin{table}[h]
 		\centering
@@ -289,6 +383,10 @@
 			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
 			& \textbf{Stage 1: Input preparation} & \textbf{Stage 2: Parameter or criterion selection} \\ \hline
 			
+			Binary thresholding 
+			& Uses pixel intensity values directly 
+			& Choose threshold value manually or automatically \\ \hline
+			
 			K-means clustering 
 			& Uses pixel features such as intensity, color or coordinates 
 			& Select the number of clusters K \\ \hline
@@ -296,10 +394,6 @@
 			Mean shift clustering 
 			& Maps pixels into a feature space and prepares a kernel window 
 			& Choose kernel bandwidth defining neighborhood size \\ \hline
-			
-			Binary thresholding 
-			& Uses pixel intensity values directly 
-			& Choose threshold value manually or automatically \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -313,6 +407,10 @@
 			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
 			& \textbf{Stage 3: Decision rule or region formation} & \textbf{Stage 4: Final labeling} \\ \hline
 			
+			Binary thresholding 
+			& Compare intensity with threshold and classify each pixel 
+			& Produce a binary mask with two classes \\ \hline
+			
 			K-means clustering 
 			& Assign pixel to the nearest cluster center and refine iteratively 
 			& Output cluster label for each pixel \\ \hline
@@ -320,10 +418,6 @@
 			Mean shift clustering 
 			& Shift pixel toward density peak and group by convergence mode 
 			& Assign each pixel to the mode it reaches \\ \hline
-			
-			Binary thresholding 
-			& Compare intensity with threshold and classify each pixel 
-			& Produce a binary mask with two classes \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -336,9 +430,13 @@
 		\begin{tabular}{|l|p{10cm}|}
 			\hline
 			\textbf{Methods} & \textbf{Contribution} \\ \hline
-			K-means clustering & Introduced a simple and widely used baseline that works across many image types and served as a foundation for later clustering methods. \\ \hline
-			Mean shift clustering & Demonstrated a nonparametric density based approach that does not require specifying the number of clusters and influenced modern segmentation research. \\ \hline
+			
 			Binary thresholding & Provided an efficient method for separating foreground and background and remains widely used in preprocessing and simple segmentation tasks. \\ \hline
+			
+			K-means clustering & Introduced a simple and widely used baseline that works across many image types and served as a foundation for later clustering methods. \\ \hline
+			
+			Mean shift clustering & Demonstrated a nonparametric density based approach that does not require specifying the number of clusters and influenced modern segmentation research. \\ \hline
+			
 		\end{tabular}
 	\end{table}
 \end{frame}
@@ -349,18 +447,30 @@
 		\begin{tabular}{|l|p{10cm}|}
 			\hline
 			\textbf{Methods} & \textbf{Limitations} \\ \hline
-			K-means clustering & Requires the number of classes beforehand. Sensitive to initialization. Converges to local minima. Performs poorly with non convex clusters. \\ \hline
-			Mean shift clustering & High computational cost for large images. Sensitive to kernel bandwidth. May over segment when parameters are not tuned. \\ \hline
 			Binary thresholding & Works only when intensity separation is clear. Sensitive to lighting changes. Cannot handle multiple classes without extension. \\ \hline
+			
+			K-means clustering & Requires the number of classes beforehand. Sensitive to initialization. Converges to local minima. Performs poorly with non convex clusters. \\ \hline
+			
+			Mean shift clustering & High computational cost for large images. Sensitive to kernel bandwidth. May over segment when parameters are not tuned. \\ \hline
+			
 		\end{tabular}
 	\end{table}
 \end{frame}
 
-\begin{frame}{Traditional Methods}
-	There are different techniques for image segmentation like threshold
-	based, edgebased, cluster based, neuralnetwork based
-	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based. One of the most efficient methods is the clustering method.
+\begin{frame}{Binary Threshold}
+	Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.\\
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{imagens/binarythreshold.png}
+	\end{center}
 \end{frame}
+
+\begin{frame}{Binary Threshold}
+	Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.\\
+	\begin{center}
+		\includegraphics[width=0.9\textwidth]{imagens/binarythreshold2.png}
+	\end{center}
+\end{frame}
+
 
 \begin{frame}{K-Means Clustering}
 	K-Means is an unsupervised clustering algorithm used to segment regions of interest from the background \cite{nameirakpam2015kmeanssubtractive}. It was first introduced by Hartigan in 1975, and its goal is to partition $M$ points in an $N$-dimensional space into $K$ clusters such that the within-cluster sum of squares is minimized \cite{hartigan1979kmeans}.\\
@@ -377,7 +487,6 @@
 \end{frame}
 
 
-
 \begin{frame}{Mean Shift Clustering}
 	Mean Shift is a non-parametric clustering algorithm, which falls into unsupervised clustering category. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.\\
 	\begin{center}
@@ -389,22 +498,6 @@
 	The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.\\
 	\begin{center}
 		\includegraphics[width=0.4\textwidth]{imagens/meanshift2.png}
-	\end{center}
-\end{frame}
-
-
-
-\begin{frame}{Binary Threshold}
-	Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/binarythreshold.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Binary Threshold}
-	Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.\\
-	\begin{center}
-		\includegraphics[width=0.9\textwidth]{imagens/binarythreshold2.png}
 	\end{center}
 \end{frame}
 
@@ -598,6 +691,114 @@
 	\end{center}
 \end{frame}
 
+\begin{frame}{Visual Prompt Methods} % Mechanics
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Mechanics} \\ \hline
+			
+			GrabCut
+			& Models foreground and background with Gaussian Mixture Models. \\ \hline
+			
+			FocalClick
+			& Dual branch design: global branch for full image understanding, focal branch that zooms into the region indicated by clicks. \\ \hline
+			
+			SAM
+			& Uses a large image encoder based on Vision Transformers and a lightweight prompt encoder for points, boxes, or masks. \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Visual Prompt Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{6cm}|p{6cm}|}
+			\hline
+			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Prompt Acquisition and Encoding} & \textbf{Feature Representation and Context Modeling} \\ \hline
+			
+			GrabCut
+			& Bounding box serves as the prompt and is encoded by assigning initial labels to foreground and background regions
+			& Image representation is formed by GMM based color models and pairwise smoothness terms \\ \hline
+			
+			FocalClick 
+			& Clicking points are encoded as foreground or background click maps that serve as spatial guidance
+			& Contextual representation is obtained using deep features from global and focal branches \\ \hline
+			
+			SAM
+			& Prompts such as points, boxes, or masks are encoded into prompt tokens via a dedicated prompt encoder
+			& Contextual representation is obtained from a Vision Transformer that produces a high dimensional embedding of the input image \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Visual Prompt Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+			\hline
+			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Guided Inference} & \textbf{Mask Generation} \\ \hline
+			
+			GrabCut
+			& Guided inference occurs through graph cut energy minimization 
+			& Mask generation corresponds to the binary labeling produced by the optimized cut \\ \hline
+			
+			FocalClick
+			& Guided inference is performed by a learned mapping that conditions feature integration on the encoded prompts 
+			& Mask generation is achieved by fusing outputs from global and focal modules to produce a refined prediction \\ \hline
+			
+			SAM
+			& Guided inference is conducted by a mask decoder that integrates prompt embeddings with the image embedding using attention mechanisms
+			& Mask generation consists of producing multiple candidate masks with associated confidence scores in a single forward pass \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Visual Prompt Methods} % Contribution
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Contribution} \\ \hline
+			
+			GrabCut 
+			& Introduced iterative GMM refinement integrated with graph cuts. Became a foundational technique in classical computer vision.\\ \hline
+			
+			FocalClick 
+			& Introduced coarse to fine refinement through focal regions. Better handling of small objects and thin structures than older deep methods.\\ \hline
+			
+			SAM
+			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
+			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Visual Prompt Methods} % Limitation
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\textbf{Technique} & \textbf{Limitations} \\ \hline
+			
+			GrabCut 
+			& Struggles with fine boundaries such as hair or transparent objects. Sensitive to the initial bounding box.\\ \hline
+			
+			FocalClick 
+			& Does not generalize as well to unseen image types compared to foundation models. Performance depends on click placement quality.\\ \hline
+			
+			SAM
+			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement.\\ \hline
+			
+		\end{tabular}
+	\end{table}
+	
+\end{frame}
 
 \section{Methodology}
 

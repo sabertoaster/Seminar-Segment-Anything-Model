@@ -1,0 +1,6 @@
+Giai thich cong doan xu lý du lieu
+hãy trình bày toàn bộ quy trình đánh nhãn của bài báo đính kèm
+Hãy giải thích vì sao chỉ với vài triệu mask đánh nhãn thủ công (4.3 triệu) mà có thể tự động sinh ra đến 1.1 tỷ mask cho tập dữ liệu
+trong quy trình làm công tác dữ liệu, tạo sinh mask cho tập dữ liệu thì vai trò của visual prompt nằm ở công đoạn nào
+vai trò của visual prompt trong inference
+học cái gì (online/offline)
