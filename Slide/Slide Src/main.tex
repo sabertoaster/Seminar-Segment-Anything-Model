@@ -94,44 +94,47 @@
 \end{frame}
 
 \begin{frame}{General Background}
-	The history of this field can be broadly divided into three distinct eras.
+	Visual prompts are user-provided graphical inputs—such as clicks, boxes, or lines that "tell" a computer vision algorithm where to focus or what specific object to process.
 	\begin{itemize}
-		\item \textbf{Pre-Deep Learning Era (c. 1970s–2000s)}
-		\item \textbf{Deep Learning Era (c. 2010s)}
-		\item \textbf{Modern Research Directions}
+		\item \textbf{Points (Clicks): }The user clicks on a specific object (positive click) or background (negative click).
+		\item \textbf{Bounding Boxes: }The user drags a rectangle around the object. This gives the algorithm a clear size and location limit.
+		\item \textbf{Scribbles/Strokes: }The user draws a rough line over the object.
+	\end{itemize}
+	\begin{center}
+		\includegraphics[width=0.8\linewidth]{imagens/visual_prompt_1.png}
+	\end{center}
+\end{frame}
+
+\begin{frame}{General Background}
+	The history of this field can be broadly divided into two distinct eras.
+	\begin{itemize}
+		\item \textbf{Pre-Deep Learning Era (c. 1970s–2010s)}
+		\item \textbf{Deep Learning Era (c. 2010s - Now)}
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Pre-Deep Learning Era (c. 1970s-2000s)}
-	Segmentation methods were primarily based on handcrafted features and mathematical models. These techniques required significant domain knowledge and focused on pixel-level properties such as intensity, color, texture, and edges. \pause \\
+\begin{frame}{Pre-Deep Learning Era (c. 1970s-2010s)}
+	Visual prompts function as constraints or "seeds." When a user marks a specific area, the algorithm treats those pixels as absolute truth—anchors that define the statistical profile (color intensity or texture) of the target object. The algorithm then propagates this information outwards to neighboring pixels, grouping them together based on how similar they are to the anchor points, stops only when it encounters a sharp change in contrast (an edge). \pause \\
 	Prominent methods from
 	this period include:
 	\begin{itemize}
-		\item Canny Edge Detection
-		\item K-Means Clustering
-		\item Mean Shift Clustering
+		\item Watershed
+		\item Active Contour
+		\item Grab Cut
+		\item Region Growing
 		
 	\end{itemize} \pause
-	These methods, while foundational, relied on heuristics and low-level features, often struggling with complex scenes and semantic understanding.
+	The prompt does not provide "understanding" of the object; it simply tells the math where to start calculating and what color values to look for nearby.
 \end{frame}
 
 \begin{frame}{Deep Learning Era (c. 2010s)}
-	The advent of deep learning, particularly Convolutional Neural Networks (CNNs), revolutionized image segmentation. These models could automatically learn hierarchical features from data, eliminating the need for manual feature engineering. \pause \\
+	Visual prompt is encoded into a high-dimensional vector and fused with the image features to act as a spatial query. Instead of just looking at neighbor pixel colors, the neural network uses the prompt to focus its "attention" mechanism on a specific region, combining the user's input with its own pre-trained knowledge of object shapes. For example, if a user clicks on a cat’s ear, the model doesn't just select the ear's color; it recognizes the semantic pattern of a "cat" and predicts the entire animal.\pause \\
 	Key milestones include:
 	\begin{itemize}
-		\item Fully Convolutional Networks (FCN)
-		\item U-Net
-		\item Mask R-CNN
-	\end{itemize}
-\end{frame}
-
-\begin{frame}{Modern Research Directions}
-	Current research continues to build upon these deep learning foundations, exploring new architectures and learning paradigms for greater accuracy, efficiency, and generalization.
-	\begin{itemize}
-		\item Transformer-Based Architectures
-		\item Foundation Models
-		\item Self-Supervised Learning
-		\item Visual Prompt Model
+		\item Box Sup
+		\item Scribble Sup
+		\item Deep Extreme Cut
+		\item Segment Anything
 	\end{itemize}
 \end{frame}
 
@@ -142,7 +145,7 @@
 	\begin{itemize}
 		\item Segmentation addresses a fundamental question in perception: while image classification tells us what is in an image, segmentation answers where it is, down to the pixel level; segmentation helps reveal how an image is organized by separating it into meaningful regions.
 		\item Many methods in computer vision rely on segmented regions as inputs. Examples include object detection, recognition, tracking, 3D reconstruction, and medical image analysis. Better segmentation improves the performance of these tasks.
-		\item Segmentation studies connect computational models with how humans interpret scenes. This benefits fields such as cognitive science and computational neuroscience.
+%		\item Segmentation studies connect computational models with how humans interpret scenes. This benefits fields such as cognitive science and computational neuroscience.
 	\end{itemize}
 \end{frame}
 
@@ -295,34 +298,33 @@
 	such that pixels within each region share similar properties according to some criterion.
 \end{frame}
 
-\begin{frame}{Problem Statement}
-	For a traditional image segmentation method, the task can be described by its inputs and outputs.\\
-	\begin{itemize}
-		\item \textbf{Input:}  An image together with a specified number of classes. Depending on the method, additional choices such as a similarity measure or clustering criterion may be required.
-		
-		\item \textbf{Output:} A segmentation result in which each pixel is assigned to one of the given classes. The output is typically represented as a label map where each pixel is assigned to a class of the same spatial size as the input image.
-	\end{itemize}
-	
-\end{frame}
+%\begin{frame}{Problem Statement}
+%	For a traditional image segmentation method, the task can be described by its inputs and outputs.\\
+%	\begin{itemize}
+%		\item \textbf{Input:}  An image together with a specified number of classes. Depending on the method, additional choices such as a similarity measure or clustering criterion may be required.
+%		
+%		\item \textbf{Output:} A segmentation result in which each pixel is assigned to one of the given classes. The output is typically represented as a label map where each pixel is assigned to a class of the same spatial size as the input image.
+%	\end{itemize}
+%	
+%\end{frame}
 	
 
 \begin{frame}{Problem Statement}
-	For a modern promptable segmentation system like \textbf{SAM}, the problem can be formally defined by its inputs and outputs.
+	For a modern promptable segmentation system, the problem can be formally defined by its inputs and outputs.
 	
 	\begin{columns}[T]
 		\begin{column}{0.5\textwidth}
 			\begin{itemize}
 				\item \textbf{Input:}  An image and a ”visual prompt” that specifies the object of interest. This prompt can take various forms, such as a point (or multiple points) on the object, a bounding box enclosing it, or even a rough mask.
 				\item \textbf{Output:} One or more segmentation masks for the object(s) indicated by the prompt, along with a confidence
-				score for each mask. The ability to output multiple masks
-				is crucial for handling ambiguity.
+				score for each mask. 
+%				The ability to output multiple masks is crucial for handling ambiguity.
 			\end{itemize}
 		\end{column}
 		
 		\begin{column}{0.5\textwidth}
 			\begin{figure}
 				\includegraphics[width=0.8\textwidth]{imagens/framework.png}
-				\caption{\textbf{Model:} Segment Anything Model \textbf{(SAM)}}
 			\end{figure}
 
 		\end{column}
@@ -334,20 +336,12 @@
 	\begin{displayquote}
 		"Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B)"
 	\end{displayquote}
-		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. Its key features include:
-		\begin{itemize}
-			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
-			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
-			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
-		\end{itemize}
-\end{frame}
-
-\begin{frame}{Contribution}
-	\begin{figure}
-		\includegraphics[width=0.9\textwidth]{imagens/geo_dist.png}
-		\caption{Geographical Diversity of the Dataset}
-		\label{fig:geo}
-	\end{figure}
+		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+%		\begin{itemize}
+%			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+%			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
+%			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
+%		\end{itemize}
 \end{frame}
 
 \begin{frame}{Contribution}
@@ -357,10 +351,10 @@
 \section{Related Works}
 \subsection{Traditional Methods}
 
-\begin{frame}{Traditional Methods}
-	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based.\\
+%\begin{frame}{Traditional Methods}
+%	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based.\\
 %	One of the most efficient methods is the clustering method.
-\end{frame}
+%\end{frame}
 
 \begin{frame}{Traditional Methods} % Mechanics
 	\begin{table}[h]
@@ -368,9 +362,34 @@
 		\begin{tabular}{|l|p{10cm}|}
 			\hline
 			\textbf{Methods} & \textbf{Mechanics} \\ \hline
-			K-means clustering & Iteratively assigns each pixel to the nearest cluster center and updates centers using the mean of assigned pixels. \\ \hline
-			Mean shift clustering & Moves each pixel toward the densest region of the feature space using kernel density estimation until convergence. \\ \hline
-			Binary thresholding & Compares each pixel intensity with a chosen threshold and assigns it to foreground or background. \\ \hline
+			Watershed & Flooding process on gradient topography with controlled basins. \\ \hline
+			Active Contour & Energy minimizing curve driven by internal smoothness and image forces. \\ \hline
+			Grab Cut & Local similarity expansion based on pixel intensity or color distance. \\ \hline
+			Region Growing & Probabilistic graph cut with iterative foreground background modeling. \\ \hline
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Traditional Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{10cm}|}
+			\hline
+			\multirow{}{\textbf{Methods}} & \textbf{Methodology} \\ \cline{2-2} 
+			& \textbf{Stage 1: Input preparation} \\ \hline
+			
+			Watershed 
+			& Image gradient, foreground and background markers. \\ \hline
+			
+			Active Contour
+			& Image as continuous energy field, initial contour. \\ \hline
+			
+			Grab Cut
+			& Image as graph with color distributions (GMMs), bounding box. \\ \hline
+			
+			Region Growing
+			& Image as pixel grid with feature vectors, seed pixels. \\ \hline
+			
 		\end{tabular}
 	\end{table}
 \end{frame}
@@ -381,43 +400,23 @@
 		\begin{tabular}{|l|p{5cm}|p{5cm}|}
 			\hline
 			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Stage 1: Input preparation} & \textbf{Stage 2: Parameter or criterion selection} \\ \hline
+			& \textbf{Stage 2: Propagation/Optimization} & \textbf{Stage 3: Final labeling} \\ \hline
 			
-			Binary thresholding 
-			& Uses pixel intensity values directly 
-			& Choose threshold value manually or automatically \\ \hline
+			Watershed 
+			& Flooding until basins meet.
+			& Watershed lines form region boundaries. \\ \hline
 			
-			K-means clustering 
-			& Uses pixel features such as intensity, color or coordinates 
-			& Select the number of clusters K \\ \hline
+			Active Contour
+			& Iterative energy minimization via curve evolution.
+			& Final curve represents object boundary. \\ \hline
 			
-			Mean shift clustering 
-			& Maps pixels into a feature space and prepares a kernel window 
-			& Choose kernel bandwidth defining neighborhood size \\ \hline
+			Grab Cut
+			& Repeated min cut optimization with model updates.
+			& Cut defines segmentation boundary. \\ \hline
 			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Traditional Methods} % Methodology
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{5cm}|p{5cm}|}
-			\hline
-			\textbf{Methods} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Stage 3: Decision rule or region formation} & \textbf{Stage 4: Final labeling} \\ \hline
-			
-			Binary thresholding 
-			& Compare intensity with threshold and classify each pixel 
-			& Produce a binary mask with two classes \\ \hline
-			
-			K-means clustering 
-			& Assign pixel to the nearest cluster center and refine iteratively 
-			& Output cluster label for each pixel \\ \hline
-			
-			Mean shift clustering 
-			& Shift pixel toward density peak and group by convergence mode 
-			& Assign each pixel to the mode it reaches \\ \hline
+			Region Growing
+			& Iterative neighbor expansion.
+			& Region boundary from grown region. \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -431,11 +430,13 @@
 			\hline
 			\textbf{Methods} & \textbf{Contribution} \\ \hline
 			
-			Binary thresholding & Provided an efficient method for separating foreground and background and remains widely used in preprocessing and simple segmentation tasks. \\ \hline
+			Watershed & Introduced topographic interpretation of images and marker controlled segmentation to reduce over segmentation. \\ \hline
 			
-			K-means clustering & Introduced a simple and widely used baseline that works across many image types and served as a foundation for later clustering methods. \\ \hline
+			Active Contour & Formalized segmentation as energy minimization over curves and influenced decades of variational methods. \\ \hline
 			
-			Mean shift clustering & Demonstrated a nonparametric density based approach that does not require specifying the number of clusters and influenced modern segmentation research. \\ \hline
+			Grab Cut & Demonstrated practical interactive segmentation with probabilistic modeling. \\ \hline
+			
+			Region Growing & Established seed based interactive segmentation. \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -447,60 +448,17 @@
 		\begin{tabular}{|l|p{10cm}|}
 			\hline
 			\textbf{Methods} & \textbf{Limitations} \\ \hline
-			Binary thresholding & Works only when intensity separation is clear. Sensitive to lighting changes. Cannot handle multiple classes without extension. \\ \hline
+			Watershed & Sensitive to noise and gradient quality. \\ \hline
 			
-			K-means clustering & Requires the number of classes beforehand. Sensitive to initialization. Converges to local minima. Performs poorly with non convex clusters. \\ \hline
+			Active Contour & Struggles with concave boundaries and weak edges. \\ \hline
 			
-			Mean shift clustering & High computational cost for large images. Sensitive to kernel bandwidth. May over segment when parameters are not tuned. \\ \hline
+			Grab Cut & Assumes color separability between foreground and background; fails when distributions overlap. \\ \hline
+			
+			Region Growing & Highly sensitive to noise and intensity variation, leakage occurs at weak boundaries. \\ \hline
 			
 		\end{tabular}
 	\end{table}
 \end{frame}
-
-\begin{frame}{Binary Threshold}
-	Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/binarythreshold.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Binary Threshold}
-	Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.\\
-	\begin{center}
-		\includegraphics[width=0.9\textwidth]{imagens/binarythreshold2.png}
-	\end{center}
-\end{frame}
-
-
-\begin{frame}{K-Means Clustering}
-	K-Means is an unsupervised clustering algorithm used to segment regions of interest from the background \cite{nameirakpam2015kmeanssubtractive}. It was first introduced by Hartigan in 1975, and its goal is to partition $M$ points in an $N$-dimensional space into $K$ clusters such that the within-cluster sum of squares is minimized \cite{hartigan1979kmeans}.\\
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{imagens/kmeans.jpg}
-	\end{center}
-\end{frame}
-
-\begin{frame}{K-Means Clustering}
-	The algorithm iteratively assigns each pixel to the nearest cluster centroid and updates centroids based on current assignments. K-Means algorithm seeks a local optimum rather than a global one. Data points are divided into groups by assigning each of them to the nearest centroid. The goal is to find a solution such that moving any point from one cluster to another does not reduce the within-cluster sum of squares \cite{hartigan1979kmeans}.\\
-	\begin{center}
-		\includegraphics[width=0.3\textwidth]{imagens/kmeans2.jpg}
-	\end{center}
-\end{frame}
-
-
-\begin{frame}{Mean Shift Clustering}
-	Mean Shift is a non-parametric clustering algorithm, which falls into unsupervised clustering category. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.\\
-	\begin{center}
-		\includegraphics[width=0.4\textwidth]{imagens/meanshift.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Mean Shift Clustering}
-	The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.\\
-	\begin{center}
-		\includegraphics[width=0.4\textwidth]{imagens/meanshift2.png}
-	\end{center}
-\end{frame}
-
 
 \subsection{Deep Learning Methods}
 
@@ -511,14 +469,44 @@
 			\hline
 			\textbf{Technique} & \textbf{Mechanics} \\ \hline
 			
-			Fully connected networks 
-			& Treat the image as a long vector and process it through dense layers with no spatial preservation. \\ \hline
+			Box Sup
+			& Unsupervised methods to generates hundreds of potential mask shapes (candidate segments), bounding box is used to filter these candidates. \\ \hline
 			
-			U-Net 
-			& Uses an encoder to compress features and a decoder with skip connections to restore spatial detail for pixel level prediction. \\ \hline
+			Scribble Sup
+			& Image is divided into super pixels, use Graph Cuts optimization to label the unmarked pixels. \\ \hline
 			
-			Mask R-CNN 
-			& Extends Faster R CNN by adding a mask prediction branch that produces instance level segmentation for each detected object. \\ \hline
+			Deep Extreme Cut
+			& Heatmap from extreme points, CNN extracts feature specifically on the areas highlighted by the heatmap. \\ \hline
+
+			Segment Anything
+			& Cross attention between image embedding and prompt embedding. \\ \hline			
+		\end{tabular}
+	\end{table}
+\end{frame}
+
+\begin{frame}{Deep Learning Methods} % Methodology
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
+			\hline
+			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+			& \textbf{Image representation} & \textbf{Prompt encoding} \\ \hline
+			
+			Box Sup
+			& CNN feature maps extracted from region proposals and full images.
+			& Bounding boxes converted into soft foreground background supervision using objectness and low level segmentation cues. \\ \hline
+			
+			Scribble Sup
+			& CNN feature maps over full image.
+			& Scribbles transformed into dense label maps via graph based or CRF propagation. \\ \hline
+			
+			Deep Extreme Cut
+			& CNN encodes image appearance along with spatial context.
+			& Extreme points encoded as distance maps concatenated with image channels. \\ \hline
+			
+			Segment Anything
+			& Vision transformer generates dense image embeddings.
+			& Prompts encoded into tokens representing points, boxes, or masks. \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -527,46 +515,22 @@
 \begin{frame}{Deep Learning Methods} % Methodology
 	\begin{table}[h]
 		\centering
-		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+		\begin{tabular}{|l|p{10cm}|}
 			\hline
-			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Input preparation} & \textbf{Core mechanism} \\ \hline
+			\multirow{}{\textbf{Methods}} & \textbf{Methodology} \\ \cline{2-2} 
+			& \textbf{Mask decoding} \\ \hline
 			
-			Fully connected networks 
-			& Flatten the image into a vector of pixel values 
-			& Apply dense layers to classify each pixel or entire image regions \\ \hline
+			Box Sup
+			& CNN trained on pseudo masks predicts dense semantic segmentation masks. \\ \hline
 			
-			U-Net 
-			& Feed the full image or patches as tensor input 
-			& Use encoder decoder with skip connections to learn detailed spatial features \\ \hline
+			Scribble Sup
+			& CNN outputs semantic masks learned from propagated pseudo labels. \\ \hline
 			
-			Mask R-CNN 
-			& Use image as input along with region proposals from RPN 
-			& Combine feature backbone, region alignment and mask head for instance level masks \\ \hline
+			Deep Extreme Cut
+			& Single pass CNN inference produces object mask. \\ \hline
 			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Deep Learning Methods} % Methodology
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{5cm}|p{5cm}|}
-			\hline
-			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Training process} & \textbf{Output generation} \\ \hline
-			
-			Fully connected networks 
-			& Train with backpropagation on flattened pixels using classification loss 
-			& Produce class probabilities for each pixel then reshape to segmentation map \\ \hline
-			
-			U-Net 
-			& Train with pixel wise loss while leveraging skip connections to recover spatial detail 
-			& Generate dense segmentation map matching input resolution \\ \hline
-			
-			Mask R-CNN 
-			& Train multi stage loss for bounding boxes, classes and per instance masks 
-			& Output object bounding boxes, class labels and a separate mask for each instance \\ \hline
+			Segment Anything
+			& Transformer based mask decoder predicts multiple candidate masks with confidence scores. \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -579,14 +543,17 @@
 			\hline
 			\textbf{Technique} & \textbf{Contribution} \\ \hline
 			
-			Fully connected networks 
-			& Provided early neural network baselines for segmentation but highlighted the need for spatially aware architectures. \\ \hline
+			Box Sup
+			& . \\ \hline
 			
-			U-Net 
-			& Became one of the most influential architectures in medical imaging and many pixel level tasks due to its skip connection strategy. \\ \hline
+			Scribble Sup
+			& . \\ \hline
 			
-			Mask R-CNN 
-			& Established a strong and widely adopted framework for instance segmentation by unifying detection and mask generation. \\ \hline
+			Deep Extreme Cut
+			& . \\ \hline
+			
+			Segment Anything
+			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
 			
 		\end{tabular}
 	\end{table}
@@ -599,208 +566,285 @@
 			\hline
 			\textbf{Technique} & \textbf{Limitations} \\ \hline
 			
-			Fully connected networks 
-			& Large number of parameters, loss of spatial information and poor performance on detailed segmentation. \\ \hline
+			Box Sup
+			& . \\ \hline
 			
-			U-Net 
-			& Performance depends on training data scale, can be memory heavy and is less suited for object level separation. \\ \hline
+			Scribble Sup
+			& . \\ \hline
 			
-			Mask R-CNN 
-			& Complex multi stage training pipeline and high computational cost for large images or many objects. \\ \hline
+			Deep Extreme Cut
+			& . \\ \hline
 			
-		\end{tabular}
-	\end{table}
-	
-\end{frame}
-
-\begin{frame}{U-Net}
-	U-Net, proposed by Ronneberger et al. in 2015, features a symmetric encoder-decoder architecture with extensive skip connections \cite{ronneberger2015unet}. Originally designed for biomedical image segmentation, U-Net achieves high accuracy even with limited training data.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/unet.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{U-Net}
-	FCN transforms classification networks (e.g., VGG, ResNet) into fully convolutional architectures by replacing dense layers with $1 \times 1$ convolutions. The network produces coarse feature maps through successive pooling, then upsamples them back to the original image resolution using transposed convolutions (deconvolution). Skip connections combine deep semantic features with shallow appearance features to recover spatial details lost during downsampling.\\
-	\begin{center}
-		\includegraphics[width=0.4\textwidth]{imagens/unet2.png}
-	\end{center}
-\end{frame}
-
-
-
-\begin{frame}{Mask R-CNN}
-	Mask R-CNN, introduced by He et al. in 2017, extends Faster R-CNN for instance segmentation by adding a parallel branch for predicting segmentation masks \cite{he2017mask}. This architecture excels at detecting and segmenting individual object instances.
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/maskrcnn.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Mask R-CNN}
-	Mask R-CNN operates in two stages. First, a Region Proposal Network (RPN) generates candidate object bounding boxes. Second, for each region of interest (RoI), the network performs three parallel tasks: class prediction, bounding box regression, and mask prediction. The key innovation is RoIAlign, which preserves spatial alignment during RoI pooling by using bilinear interpolation, crucial for pixel-accurate mask prediction.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/maskrcnn.png}
-	\end{center}
-\end{frame}
-
-
-
-\begin{frame}{DeepLab}
-	DeepLab, developed by Chen et al., employs atrous (dilated) convolution and Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale contextual information without reducing spatial resolution \cite{chen2017deeplab}. DeepLabv3+ further incorporates an encoder-decoder structure.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/deeplab.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{DeepLab}
-	DeepLab uses atrous convolution to expand the receptive field without increasing parameters or reducing resolution. The atrous rate $r$ controls the spacing between kernel weights. ASPP applies parallel atrous convolutions with different rates to capture objects at multiple scales. The encoder-decoder structure (in DeepLabv3+) first extracts features, then gradually recovers spatial details through the decoder with skip connections.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/deeplab.png}
-	\end{center}
-\end{frame}
-
-
-
-\begin{frame}{Transformer-Based Segmentation}
-	Vision Transformers (ViTs) adapt the self-attention mechanism from NLP to computer vision. TransUNet, introduced by Chen et al. in 2021, combines Transformers with U-Net architecture for medical image segmentation \cite{chen2021transunet}.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/transunet.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Transformer-Based Segmentation}
-	TransUNet uses a CNN to extract initial features, then patches the feature map and processes it through Transformer encoder layers. The self-attention mechanism captures long-range dependencies between image patches, overcoming the limited receptive field of CNNs. The Transformer output is reshaped and fed into a CNN decoder similar to U-Net, with skip connections from the CNN encoder for recovering spatial details.\\
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{imagens/transunet.png}
-	\end{center}
-\end{frame}
-
-
-
-\begin{frame}{Recurrent Neural Networks for Segmentation}
-	RNNs, particularly Long Short-Term Memory (LSTM) networks, have been applied to image segmentation to model spatial dependencies and context \cite{visin2015rnn}. ReNet and related architectures process images sequentially in horizontal and vertical sweeps.\\
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{imagens/rnn.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Recurrent Neural Networks for Segmentation}
-	RNN-based segmentation treats the image as a sequence, processing it row-by-row or with overlapping patches. Four RNN layers sweep the image in different directions (left-to-right, right-to-left, top-to-bottom, bottom-to-top) to capture context from all spatial neighbors. The hidden states from all four directions are concatenated to form a rich contextual representation for each pixel. Multiple ReNet layers can be stacked to increase the receptive field.\\
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{imagens/rnn.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Visual Prompt Methods} % Mechanics
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{10cm}|}
-			\hline
-			\textbf{Technique} & \textbf{Mechanics} \\ \hline
-			
-			GrabCut
-			& Models foreground and background with Gaussian Mixture Models. \\ \hline
-			
-			FocalClick
-			& Dual branch design: global branch for full image understanding, focal branch that zooms into the region indicated by clicks. \\ \hline
-			
-			SAM
-			& Uses a large image encoder based on Vision Transformers and a lightweight prompt encoder for points, boxes, or masks. \\ \hline
-			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Visual Prompt Methods} % Methodology
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{6cm}|p{6cm}|}
-			\hline
-			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Prompt Acquisition and Encoding} & \textbf{Feature Representation and Context Modeling} \\ \hline
-			
-			GrabCut
-			& Bounding box serves as the prompt and is encoded by assigning initial labels to foreground and background regions
-			& Image representation is formed by GMM based color models and pairwise smoothness terms \\ \hline
-			
-			FocalClick 
-			& Clicking points are encoded as foreground or background click maps that serve as spatial guidance
-			& Contextual representation is obtained using deep features from global and focal branches \\ \hline
-			
-			SAM
-			& Prompts such as points, boxes, or masks are encoded into prompt tokens via a dedicated prompt encoder
-			& Contextual representation is obtained from a Vision Transformer that produces a high dimensional embedding of the input image \\ \hline
-			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Visual Prompt Methods} % Methodology
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{5cm}|p{5cm}|}
-			\hline
-			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-			& \textbf{Guided Inference} & \textbf{Mask Generation} \\ \hline
-			
-			GrabCut
-			& Guided inference occurs through graph cut energy minimization 
-			& Mask generation corresponds to the binary labeling produced by the optimized cut \\ \hline
-			
-			FocalClick
-			& Guided inference is performed by a learned mapping that conditions feature integration on the encoded prompts 
-			& Mask generation is achieved by fusing outputs from global and focal modules to produce a refined prediction \\ \hline
-			
-			SAM
-			& Guided inference is conducted by a mask decoder that integrates prompt embeddings with the image embedding using attention mechanisms
-			& Mask generation consists of producing multiple candidate masks with associated confidence scores in a single forward pass \\ \hline
-			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Visual Prompt Methods} % Contribution
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{10cm}|}
-			\hline
-			\textbf{Technique} & \textbf{Contribution} \\ \hline
-			
-			GrabCut 
-			& Introduced iterative GMM refinement integrated with graph cuts. Became a foundational technique in classical computer vision.\\ \hline
-			
-			FocalClick 
-			& Introduced coarse to fine refinement through focal regions. Better handling of small objects and thin structures than older deep methods.\\ \hline
-			
-			SAM
-			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
-			
-		\end{tabular}
-	\end{table}
-\end{frame}
-
-\begin{frame}{Visual Prompt Methods} % Limitation
-	\begin{table}[h]
-		\centering
-		\begin{tabular}{|l|p{10cm}|}
-			\hline
-			\textbf{Technique} & \textbf{Limitations} \\ \hline
-			
-			GrabCut 
-			& Struggles with fine boundaries such as hair or transparent objects. Sensitive to the initial bounding box.\\ \hline
-			
-			FocalClick 
-			& Does not generalize as well to unseen image types compared to foundation models. Performance depends on click placement quality.\\ \hline
-			
-			SAM
-			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement.\\ \hline
+			Segment Anything
+			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement. \\ \hline
 			
 		\end{tabular}
 	\end{table}
 	
 \end{frame}
+
+%\begin{frame}{Visual Prompt Methods} % Mechanics
+%	\begin{table}[h]
+%		\centering
+%		\begin{tabular}{|l|p{10cm}|}
+%			\hline
+%			\textbf{Technique} & \textbf{Mechanics} \\ \hline
+%			
+%			GrabCut
+%			& Models foreground and background with Gaussian Mixture Models. \\ \hline
+%			
+%			FocalClick
+%			& Dual branch design: global branch for full image understanding, focal branch that zooms into the region indicated by clicks. \\ \hline
+%			
+%			SAM
+%			& Uses a large image encoder based on Vision Transformers and a lightweight prompt encoder for points, boxes, or masks. \\ \hline
+%			
+%		\end{tabular}
+%	\end{table}
+%\end{frame}
+
+%\begin{frame}{Visual Prompt Methods} % Methodology
+%	\begin{table}[h]
+%		\centering
+%		\begin{tabular}{|l|p{6cm}|p{6cm}|}
+%			\hline
+%			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+%			& \textbf{Prompt Acquisition and Encoding} & \textbf{Feature Representation and Context Modeling} \\ \hline
+%			
+%			GrabCut
+%			& Bounding box serves as the prompt and is encoded by assigning initial labels to foreground and background regions
+%			& Image representation is formed by GMM based color models and pairwise smoothness terms \\ \hline
+%			
+%			FocalClick 
+%			& Clicking points are encoded as foreground or background click maps that serve as spatial guidance
+%			& Contextual representation is obtained using deep features from global and focal branches \\ \hline
+%			
+%			SAM
+%			& Prompts such as points, boxes, or masks are encoded into prompt tokens via a dedicated prompt encoder
+%			& Contextual representation is obtained from a Vision Transformer that produces a high dimensional embedding of the input image \\ \hline
+%			
+%		\end{tabular}
+%	\end{table}
+%\end{frame}
+%
+%\begin{frame}{Visual Prompt Methods} % Methodology
+%	\begin{table}[h]
+%		\centering
+%		\begin{tabular}{|l|p{5cm}|p{5cm}|}
+%			\hline
+%			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
+%			& \textbf{Guided Inference} & \textbf{Mask Generation} \\ \hline
+%			
+%			GrabCut
+%			& Guided inference occurs through graph cut energy minimization 
+%			& Mask generation corresponds to the binary labeling produced by the optimized cut \\ \hline
+%			
+%			FocalClick
+%			& Guided inference is performed by a learned mapping that conditions feature integration on the encoded prompts 
+%			& Mask generation is achieved by fusing outputs from global and focal modules to produce a refined prediction \\ \hline
+%			
+%			SAM
+%			& Guided inference is conducted by a mask decoder that integrates prompt embeddings with the image embedding using attention mechanisms
+%			& Mask generation consists of producing multiple candidate masks with associated confidence scores in a single forward pass \\ \hline
+%			
+%		\end{tabular}
+%	\end{table}
+%\end{frame}
+
+%\begin{frame}{Visual Prompt Methods} % Contribution
+%	\begin{table}[h]
+%		\centering
+%		\begin{tabular}{|l|p{10cm}|}
+%			\hline
+%			\textbf{Technique} & \textbf{Contribution} \\ \hline
+%			
+%			GrabCut 
+%			& Introduced iterative GMM refinement integrated with graph cuts. Became a foundational technique in classical computer vision.\\ \hline
+%			
+%			FocalClick 
+%			& Introduced coarse to fine refinement through focal regions. Better handling of small objects and thin structures than older deep methods.\\ \hline
+%			
+%			SAM
+%			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
+%			
+%		\end{tabular}
+%	\end{table}
+%\end{frame}
+
+%\begin{frame}{Visual Prompt Methods} % Limitation
+%	\begin{table}[h]
+%		\centering
+%		\begin{tabular}{|l|p{10cm}|}
+%			\hline
+%			\textbf{Technique} & \textbf{Limitations} \\ \hline
+%			
+%			GrabCut 
+%			& Struggles with fine boundaries such as hair or transparent objects. Sensitive to the initial bounding box.\\ \hline
+%			
+%			FocalClick 
+%			& Does not generalize as well to unseen image types compared to foundation models. Performance depends on click placement quality.\\ \hline
+%			
+%			SAM
+%			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement.\\ \hline
+%			
+%		\end{tabular}
+%	\end{table}
+%	
+%\end{frame}
 
 \section{Methodology}
+\subsection{Data Collection}
+\begin{frame}{Dataset SA-1B}
+	The fundamental challenge in building a foundation model for segmentation is the lack of web-scale segmentation data.\\
+	Segmentation masks are not naturally occurring and must be manually created.\\
+	Traditional approaches would require paying annotators to label billions of masks-economically infeasible and temporally prohibitive.
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{SAM Data Engine:}
+	\begin{enumerate}
+		\item Assisted Manual Annotation (4.3M Masks from 120K Images)
+		\item Semi-Automatic Annotation (5.9M Additional Masks, 180K Images)
+		\item Fully Automatic Annotation (1.1B Masks, 11M Images)
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{1. Assisted Manual Annotation (4.3M Masks from 120K Images):} \\
+	Workflow:
+	\begin{enumerate}
+		\item Professional annotators view an image in a web-based interface.
+		\item They click foreground/background points to indicate an object of interest.
+		\item SAM's pre-computed image embedding (from MAE-ViT-H) is queried with these prompts.
+		\item The lightweight Prompt Encoder and Mask Decoder run in real-time ($< 50$ms), generating an initial mask prediction.
+		\item Annotators refine the mask using pixel-precise brush and eraser tools.
+		\item The final mask is saved.
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Quantitative Dynamics:} \\
+	\begin{itemize}
+		\item \textbf{Initial annotation time:} 34 seconds per mask (comparable to COCO annotation standards).
+		\item \textbf{Model capacity progression:} ViT-B $\rightarrow$ ViT-H during this stage (1 retraining cycle per major improvement).
+		\item \textbf{Average masks per image:} $20 \rightarrow 44$ (increased diversity as model improved).
+		\item \textbf{Total masks collected:} 4.3M from 120K images.
+		\item \textbf{Retraining cycles:} 6 full model retraining iterations.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Efficiency Gain Analysis:} \\
+	The $34 \rightarrow 14$ second progression represents a \textbf{6.5$\times$ speedup over COCO standards} (34 seconds here vs. 14 seconds for bounding boxes). This exponential improvement in annotation velocity is crucial for economic feasibility at billion-scale.
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{2. Semi-Automatic Annotation (5.9M Additional Masks, 180K Images):} \\
+	Workflow:
+	\begin{enumerate}
+		\item Train a generic object detector on all masks from Stage 1. This detector outputs bounding boxes regardless of semantic class (object-agnostic proposal generation).
+		\item SAM automatically segments high-confidence regions identified by this detector, generating candidate masks.
+		\item Annotators are presented with images pre-filled with these automatic masks.
+		\item Annotators' task: Label only the \textit{unannotated} objects (those not covered by the automatic masks).
+		\item This forces annotators to focus on smaller, more occluded, or semantically ambiguous objects.
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Quantitative Dynamics:} \\
+	\begin{itemize}
+		\item \textbf{Annotation time (excluding automatic masks):} $\sim$34 seconds per mask (unchanged; challenging objects require the same effort).
+		\item \textbf{Average masks per image:} $44 \rightarrow 72$ (including automatic masks; diversity increased substantially).
+		\item \textbf{New masks collected:} 5.9M, raising the cumulative total to 10.2M masks.
+		\item \textbf{Retraining cycles:} 5 full model retraining iterations.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Efficiency Gain Analysis:} \\
+	The $34 \rightarrow 14$ second progression represents a \textbf{6.5$\times$ speedup over COCO standards} (34 seconds here vs. 14 seconds for bounding boxes). This exponential improvement in annotation velocity is crucial for economic feasibility at billion-scale.
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Why stage 2 is needed?}\\
+	By automatically handling easy cases and forcing annotators to label hard cases, the model learns a more balanced representation. This is empirically validated: the model's ability to handle edge cases improved significantly from Stage 1 to Stage 2, as evidenced by the diversity metrics.
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{3. Fully Automatic Annotation (1.1B Masks, 11M Images):} \\
+	Systematically prompt the model with a regular spatial grid of points ($32 \times 32$), covering the entire image.
+	Workflow:
+	\begin{enumerate}
+		\item Each point is passed as a prompt to the Prompt Encoder.
+		\item For each point, SAM predicts \textbf{three masks simultaneously}.
+		\item \textbf{Theoretical maximum:} $1024 \text{ points} \times 3 \text{ masks per point} = 3072 \text{ masks per image}$.
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Why stage 3 is needed?}\\
+	A regular grid ensures comprehensive spatial coverage. If an object's boundary passes through or near a grid point, the model will capture it from that point. Objects of varying sizes are covered because the grid is at a fixed, moderate resolution. This is fundamentally different from random point sampling, which can miss objects entirely.
+\end{frame}
+
+\subsection{Model Architecture}
+\begin{frame}{Segment Anything Model}
+	\textbf{Loss Function}\\
+	A linear combination of focal loss and dice loss in a 20:1 ratio of focal loss to dice loss.\\
+	\begin{itemize}
+		\item Local Loss: Focus to learning energy to hard pixels.\\
+		\[
+			FocalLoss= - \Sigma_{i=1}^n (i - p_i)^\gamma log_b(p_i)
+		\]
+		\item Dice Loss: Differentiable approximation of IoU.
+		\[
+			DiceLoss=\frac{2 * Intersection}{Prediction + Ground\_Truth}
+		\]
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	\textbf{Why 3 outputs per prompt?}\\
+	Empirical analysis during SAM's development showed that image regions typically have at most three levels of semantic hierarchy (whole $>$ part $>$ sub-part). Predicting three masks covers all common ambiguity scenarios without excessive computation.
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	\begin{center}
+		\includegraphics[width=\linewidth]{imagens/sam_architecture.png}
+	\end{center}
+	\begin{itemize}
+		\item Image Encoder: MAE pre-trained Vision Transformer (ViT).
+		\item Prompt Encoder: 
+		\begin{itemize}
+			\item Point, box: Positional encoding summed with learned embeddings for each prompt type.
+			\item Mask: Convolution and summed element-wise with the image embedding.
+		\end{itemize}
+			
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	\begin{itemize}
+		\item Mask Decoder:
+		\begin{center}
+			\includegraphics[width=\linewidth]{imagens/mask_decoder.png}
+		\end{center}
+		
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Output token is an embedding vector acts as a query for the final mask prediction (analogous to CLS token in BERT or ViT).\\
+	This token gether information about the prompt embeddings and image embeddings to form semantic information required to segment the target object.
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	\begin{itemize}
+		\item Image Encoder: Fine-tune its weights to adapt its visual features to be queryable.
+		\item Mask Decoder: Transformer layers, MLP, upscaling convolutions.
+		\item Prompt Encoder: Convolutional layers for positional encodings, vectors for "Foreground", "Background", Top-left", "Bottom-right", Not-a-point".
+		\item Output token: 4 vectors (3 for multi-mask outputs: whole, part, sub-part, 1 for IoU confidence prediction).
+	\end{itemize}
+\end{frame}
 
 \section{Implementation \& Experiment}
 
