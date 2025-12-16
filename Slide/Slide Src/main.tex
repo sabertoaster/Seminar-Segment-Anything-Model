@@ -331,22 +331,22 @@
 	\end{columns}
 \end{frame}
 
-\subsection{Contribution}
-\begin{frame}{Contribution}
-	\begin{displayquote}
-		"Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B)"
-	\end{displayquote}
-		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
-%		\begin{itemize}
-%			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
-%			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
-%			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
-%		\end{itemize}
-\end{frame}
+%\subsection{Contribution}
+%\begin{frame}{Contribution}
+%	\begin{displayquote}
+%		"Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B)"
+%	\end{displayquote}
+%		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+%%		\begin{itemize}
+%%			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
+%%			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
+%%			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
+%%		\end{itemize}
+%\end{frame}
 
-\begin{frame}{Contribution}
-	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
-\end{frame}
+%\begin{frame}{Contribution}
+%	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
+%\end{frame}
 
 \section{Related Works}
 \subsection{Traditional Methods}
@@ -544,13 +544,13 @@
 			\textbf{Technique} & \textbf{Contribution} \\ \hline
 			
 			Box Sup
-			& . \\ \hline
+			& It effectively combined traditional "region proposal" methods (unsupervised) with deep learning (supervised), allowing the network to learn shapes without ever seeing a ground truth mask. \\ \hline
 			
 			Scribble Sup
-			& . \\ \hline
+			& It successfully integrated a Graphical Model (Graph Cut) into the deep learning pipeline. The graph propagates the scribble information to nearby pixels based on color/texture, creating a dense mask to train the CNN. \\ \hline
 			
 			Deep Extreme Cut
-			& . \\ \hline
+			& It showed that annotating extreme points is 5x faster than drawing polygons but yields results that are nearly as good as fully supervised learning. \\ \hline
 			
 			Segment Anything
 			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
@@ -562,18 +562,18 @@
 \begin{frame}{Deep Learning Methods} % Limitation
 	\begin{table}[h]
 		\centering
-		\begin{tabular}{|l|p{10cm}|}
+		\begin{tabular}{|l|p{11cm}|}
 			\hline
 			\textbf{Technique} & \textbf{Limitations} \\ \hline
 			
 			Box Sup
-			& . \\ \hline
+			& The model is limited by the quality of the candidate generation (MCG/Selective Search). If the proposal algorithm fails to generate a mask that fits the object, the CNN cannot learn it. \\ \hline
 			
 			Scribble Sup
-			& . \\ \hline
+			& The "propagation" step relies on traditional color and texture similarity. If the object has low contrast, the graph cut fails to spread the label correctly. \\ \hline
 			
 			Deep Extreme Cut
-			& . \\ \hline
+			& The user must provide exactly 4 points, and they must be the extreme edges. It struggles with objects that have disjoint parts because the extreme points might not capture the empty space in between efficiently. \\ \hline
 			
 			Segment Anything
 			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement. \\ \hline
@@ -782,24 +782,68 @@
 \end{frame}
 
 \begin{frame}{Dataset SA-1B}
-	\textbf{Why stage 3 is needed?}\\
-	A regular grid ensures comprehensive spatial coverage. If an object's boundary passes through or near a grid point, the model will capture it from that point. Objects of varying sizes are covered because the grid is at a fixed, moderate resolution. This is fundamentally different from random point sampling, which can miss objects entirely.
+	\textbf{Filtering, Deduplication, Non-Maximum Suppression}\\
+	\begin{enumerate}
+		\item IoU Scoring and Confidence Thresholding
+		\item Stability Filtering
+		\item Non-Maximum Suppression (NMS)
+	\end{enumerate}
 \end{frame}
 
-\subsection{Model Architecture}
-\begin{frame}{Segment Anything Model}
-	\textbf{Loss Function}\\
-	A linear combination of focal loss and dice loss in a 20:1 ratio of focal loss to dice loss.\\
+\begin{frame}{Dataset SA-1B}
+	\textbf{IoU Scoring and Confidence Thresholding}\\
 	\begin{itemize}
-		\item Local Loss: Focus to learning energy to hard pixels.\\
-		\[
-			FocalLoss= - \Sigma_{i=1}^n (i - p_i)^\gamma log_b(p_i)
-		\]
-		\item Dice Loss: Differentiable approximation of IoU.
-		\[
-			DiceLoss=\frac{2 * Intersection}{Prediction + Ground\_Truth}
-		\]
+		\item For each of the three masks predicted from a grid point, SAM outputs a \textbf{predicted IoU score} (estimated mask quality).
+		\item \textbf{Threshold:} Only masks with \textbf{predicted IoU $>$ 0.88} are retained.
+		\item \textbf{Rationale:} High IoU threshold ensures only high-quality masks enter the deduplication pipeline.
+		\item \textbf{Expected reduction:} From 3072 theoretical outputs, this threshold alone eliminates $\sim$80\% of predictions (keeping only predictions the model is highly confident about).
 	\end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Stability Filtering}\\
+	\begin{itemize}
+		\item A mask is \textbf{stable} if small perturbations in the model's confidence threshold (e.g., changing the foreground probability threshold from 0.5 to $0.5 \pm \epsilon$) produce similar masks.
+		\item \textbf{Operationally:} Threshold the mask's probability map at both 0.5 and 0.5, and compute the IoU between the two resulting binary masks.
+		\item If this "stability IoU" is high ($> 0.95$), the mask is kept; otherwise, it is discarded.
+		\item \textbf{Why This Matters:} Masks that are brittle (sensitive to small threshold changes) are often segmentation errors or include spurious boundaries. Stability filtering removes low-confidence predictions and keeps robust ones.
+		\item \textbf{Further reduction:} $\sim$50\% of remaining masks fail stability checks.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Non-Maximum Suppression}\\
+	\begin{enumerate}
+		\item Sort masks by predicted IoU score.
+		\item Select the highest-scoring mask $m_1$.
+		\item Foa all remaining masks $m_i$:
+		\begin{itemize}
+			\item Compute $\text{IoU}(m_1, m_i) = \frac{|m_1 \cap m_i|}{|m_1 \cup m_i|}$ (Jaccard index).
+			\item If $\text{IoU}(m_1, m_i) > \text{thresh}_{\text{IoU}}$ (typically 0.7), discard $m_i$ (it is a near-duplicate).
+			\item If $\text{IoU}(m_1, m_i) \leq \text{thresh}_{\text{IoU}}$, retain $m_i$ (it is a distinct object).
+		\end{itemize}
+		\item Repeat on remaining unprocessed masks.
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Scale Reduction Summary:}
+	\begin{itemize}
+		\item \textbf{Start:} 3072 theoretical masks ($32 \times 32$ grid $\times$ 3 outputs per grid cell).
+		\item \textbf{After IoU filtering ($>0.88$):} $\sim$600 masks (20\% remain).
+		\item \textbf{After stability filtering:} $\sim$300 masks (50\% of IoU-filtered).
+		\item \textbf{After NMS ($\text{thresh\_IoU} = 0.7$):} $\mathbf{\sim100 \text{ masks}}$ (final).
+	\end{itemize}
+	
+	\textbf{Final Calculation:}
+	\[
+	\text{Total SA-1B Masks} = 11\text{M images} \times 100 \text{ masks/image} = 1.1 \text{ B masks}
+	\]
+\end{frame}
+
+\begin{frame}{Dataset SA-1B}
+	\textbf{Why stage 3 is needed?}\\
+	A regular grid ensures comprehensive spatial coverage. If an object's boundary passes through or near a grid point, the model will capture it from that point. Objects of varying sizes are covered because the grid is at a fixed, moderate resolution. This is fundamentally different from random point sampling, which can miss objects entirely.
 \end{frame}
 
 \begin{frame}{Segment Anything Model}
@@ -843,6 +887,22 @@
 		\item Mask Decoder: Transformer layers, MLP, upscaling convolutions.
 		\item Prompt Encoder: Convolutional layers for positional encodings, vectors for "Foreground", "Background", Top-left", "Bottom-right", Not-a-point".
 		\item Output token: 4 vectors (3 for multi-mask outputs: whole, part, sub-part, 1 for IoU confidence prediction).
+	\end{itemize}
+\end{frame}
+
+\subsection{Model Architecture}
+\begin{frame}{Segment Anything Model}
+	\textbf{Loss Function}\\
+	A linear combination of focal loss and dice loss in a 20:1 ratio of focal loss to dice loss.\\
+	\begin{itemize}
+		\item Local Loss: Focus to learning energy to hard pixels.\\
+		\[
+		FocalLoss= - \Sigma_{i=1}^n (i - p_i)^\gamma log_b(p_i)
+		\]
+		\item Dice Loss: Differentiable approximation of IoU.
+		\[
+		DiceLoss=\frac{2 * Intersection}{Prediction + Ground\_Truth}
+		\]
 	\end{itemize}
 \end{frame}
 
