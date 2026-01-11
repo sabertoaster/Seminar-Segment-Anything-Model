@@ -171,3 +171,604 @@ To further improve small object segmentation (which is notoriously challenging),
 
 \textbf{Why This Is Crucial:}
 Small objects (relative size $< 1\%$ of image) have very few pixels. A standard NMS threshold might inadvertently merge them with larger neighbors. By processing zoomed crops, SAM explicitly allocates model capacity to these hard-to-segment regions.
+
+\subsection{The Data Flywheel Effect}
+
+The three-stage progression is not arbitrary; it represents a \textbf{strategic feedback loop}:
+
+\begin{enumerate}
+    \item \textbf{Stage 1} teaches the model to segment \textit{diverse} objects via human guidance.
+    \item \textbf{Stage 2} forces the model to learn \textit{challenging} objects via curriculum learning.
+    \item \textbf{Stage 3} leverages the improved model to generate \textit{scale} without human cost.
+\end{enumerate}
+
+Each stage's output is not just data; it is a \textbf{training signal} that improves the model, unlocking the next stage's efficiency. This is the flywheel: better models enable cheaper data collection, which enables better models.
+
+\textbf{Quantitative Evidence:}
+\begin{itemize}
+    \item \textbf{Average annotation time:} 34 seconds (Stage 1) $\rightarrow$ 14 seconds (Stage 1 end, model improvement) $\rightarrow$ 0 seconds (Stage 3, full automation).
+    \item \textbf{Cumulative masks:} 4.3M (Stage 1) + 5.9M (Stage 2) + 1.1B (Stage 3) = 1.1B total.
+    \item \textbf{Economic analysis:} Had SAM required the same 14 seconds per mask for all 1.1B masks (even manually), the total annotation cost would be $1.1\text{B} \times 14 \text{ seconds} = 17.3 \text{ billion seconds} \approx 548 \text{ years}$ of continuous annotation. Stage 3 eliminates this cost entirely.
+\end{itemize}
+
+\section{Architecture and Embedding Space Alignment}
+
+\subsection{The Decoupled Design: Amortized Computation}
+
+SAM's architecture embodies a principle crucial for real-time, interactive segmentation: \textbf{separate the expensive computation from the user-facing latency}.
+
+\[
+\text{Computational Cost} = \text{Image Encoder Cost} + \text{(Prompt Encoder + Mask Decoder Cost)}
+\]
+
+\textbf{Key Design:}
+\begin{itemize}
+    \item Image Encoder runs \textbf{once per image}, producing a latent embedding.
+    \item This embedding is cached.
+    \item Prompt Encoder and Mask Decoder run \textbf{every time the user provides a new prompt}, but on the cached embedding.
+    \item Result: 50ms per prompt on CPU in a web browser (no GPU required).
+\end{itemize}
+
+\textbf{Why Amortization Matters:}
+In traditional interactive segmentation (e.g., RITM, SimpleClick), the entire network processes the image for each new click, leading to latency. SAM's decoupling means that the first prompt has a cost (cached image encoding) and subsequent prompts are nearly free. For applications with many prompts (e.g., dense instance segmentation with many objects), the amortized cost per object approaches zero.
+
+\subsection{Image Encoder: MAE Pre-trained ViT-H}
+
+\subsubsection{Vision Transformer Architecture Fundamentals}
+
+A Vision Transformer (ViT) processes images by:
+\begin{enumerate}
+    \item Dividing the image into non-overlapping patches (typically $16 \times 16$ pixels).
+    \item Flattening each patch into a 1D vector and projecting to embedding dimension $d = 768$ (for ViT-B) or $d = 1280$ (for ViT-H).
+    \item Adding \textbf{positional embeddings} to inject spatial information.
+    \item Processing the sequence of patch embeddings through stacked Transformer layers using self-attention.
+\end{enumerate}
+
+\textbf{Positional Embeddings in ViT:}
+
+The Transformer architecture is inherently \textbf{permutation-invariant}—it treats input tokens as an unordered set. Without positional information, a ViT cannot distinguish between a patch from the top-left corner and one from the bottom-right.
+
+\textbf{Sinusoidal Positional Encoding (Standard in ViT):}
+
+\[
+PE_{(p, 2d)} = \sin\left(\frac{p}{10000^{2d/D}}\right), \quad PE_{(p, 2d+1)} = \cos\left(\frac{p}{10000^{2d/D}}\right)
+\]
+
+where $p$ is the patch position (0 to 256 for a $16 \times 16$ grid) and $D$ is the embedding dimension.
+
+These encodings are \textbf{added element-wise} to the patch embeddings:
+
+\[
+\mathbf{z}_0^{(i)} = \mathbf{x}_i + PE_i
+\]
+
+where $\mathbf{x}_i$ is the patch embedding and $\mathbf{z}_0^{(i)}$ is the positionally-aware input to the first Transformer layer.
+
+\textbf{Why Sinusoidal PE?} Sinusoidal encodings have the mathematical property that relative position information can be represented as a linear function. This enables the model to extrapolate to longer sequences (though ViT generally uses absolute positional embeddings in practice, learned during training).
+
+\subsubsection{Masked Autoencoder (MAE) Pre-training}
+
+SAM's image encoder is initialized with weights from an \textbf{MAE pre-trained} ViT-H, not standard ImageNet supervised pre-training. MAE is important because it teaches the encoder to understand \textbf{holistic image context} through self-supervised reconstruction.
+
+\textbf{MAE Pre-training Objective:}
+
+\begin{enumerate}
+    \item Mask 75\% of the image patches randomly (standard for MAE).
+    \item Feed only the visible (25\%) patches to the encoder.
+    \item Concatenate learnable \textbf{mask tokens} to the encoder output.
+    \item Feed the combined sequence to a lightweight decoder.
+    \item Decoder reconstructs the pixel values of all masked patches.
+    \item Loss: MSE between reconstructed and ground-truth pixel values.
+\end{enumerate}
+
+\textbf{Asymmetric Design:}
+
+\begin{itemize}
+    \item \textbf{Encoder:} Processes only visible patches (no mask tokens). This creates a computational speedup: the encoder is much faster because it only processes 25\% of patches.
+    \item \textbf{Decoder:} Lightweight, processes all patches including mask tokens. This is trained but then discarded in downstream tasks.
+\end{itemize}
+
+\textbf{Why MAE for SAM?}
+
+Standard supervised pre-training on ImageNet biases the encoder toward \textbf{semantic classification} (e.g., "is this a dog?"). MAE pre-training, by forcing pixel reconstruction, teaches the encoder to capture \textbf{fine-grained spatial and textural details}. For segmentation, this is superior because:
+\begin{itemize}
+    \item Accurate boundaries require pixel-level precision, not semantic class information.
+    \item MAE learns edge alignments, texture consistency, and other low-level visual properties.
+\end{itemize}
+
+\textbf{Empirical Evidence in SAM:}
+\begin{itemize}
+    \item ViT-H with MAE pre-training: Used in SAM (achieves best zero-shot performance).
+    \item ViT-H with ImageNet supervised pre-training: Outperformed by MAE at downstream segmentation tasks.
+\end{itemize}
+
+\subsubsection{High-Resolution Input Handling}
+
+Standard ViT processes images at fixed resolution (e.g., $224 \times 224$), but SAM's images are high-resolution (1500 pixels shortest side). SAM uses a modified ViT-H that:
+
+\begin{enumerate}
+    \item Maintains the $16 \times 16$ patch size (empirically optimal for detail preservation).
+    \item Dynamically handles input resolution via \textbf{positional interpolation} during fine-tuning.
+    \item Uses sliding-window attention in some variants to reduce quadratic attention complexity, though this is not explicitly detailed in the paper.
+\end{enumerate}
+
+\textbf{Output:} For a $1500 \times 1500$ image with $16 \times 16$ patches, the image embedding has shape $(256 \times 256, 1280)$—a $256 \times 256$ spatial grid of 1280-dimensional feature vectors.
+
+\subsection{Prompt Encoder: Mapping Prompts to Embedding Space}
+
+The Prompt Encoder's role is to transform diverse prompt types into embeddings compatible with the Image Embedding. This encoder is \textbf{lightweight by design} to enable real-time inference.
+
+\subsubsection{Sparse Prompts: Points and Boxes}
+
+\textbf{Points (Foreground/Background):}
+
+A point prompt is simply a 2D coordinate $(x, y)$ and a label indicating foreground (+1) or background (-1).
+
+\textbf{Representation:}
+\begin{enumerate}
+    \item Convert coordinate to positional encoding (using sinusoidal or learned embeddings).
+    \item Embed the foreground/background label using learned embeddings $\mathbf{e}_{\text{fg}}$ and $\mathbf{e}_{\text{bg}}$ (dimension 256).
+    \item Sum the positional and semantic embeddings:
+       \[ \mathbf{p}_{\text{point}} = PE(x, y) + \mathbf{e}_{\text{label}} \]
+\end{enumerate}
+
+\textbf{Boxes (Bounding Box Prompts):}
+
+A box is specified by two corners: $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$.
+
+\textbf{Representation:}
+\begin{enumerate}
+    \item Generate two "corner points": $(x_{\min}, y_{\min})$ and $(x_{\max}, y_{\max})$.
+    \item Encode each corner with distinct learned embeddings ($\mathbf{e}_{\text{top-left}}$, $\mathbf{e}_{\text{bottom-right}}$).
+    \item Embed the box as:
+       \[ \mathbf{p}_{\text{box}} = [PE(x_{\min}, y_{\min}) + \mathbf{e}_{\text{top-left}}, \quad PE(x_{\max}, y_{\max}) + \mathbf{e}_{\text{bottom-right}}] \]
+\end{enumerate}
+
+\textbf{Why Learned Embeddings?}
+Learned embeddings (not just positional) allow the model to distinguish between different types of prompts. A point labeled "foreground" should be treated differently from a "background" point, even if they have the same spatial position. Similarly, the "top-left" of a box conveys different information than the "bottom-right."
+
+\subsubsection{Dense Prompts: Mask Inputs}
+
+When a user provides a mask as a prompt (e.g., a rough sketch or previous prediction), it must be embedded as a dense signal aligned with the Image Embedding's spatial grid.
+
+\textbf{Representation:}
+\begin{enumerate}
+    \item Resize the input mask to match the spatial resolution of the Image Embedding (e.g., $256 \times 256$ if image is $1500 \times 1500$).
+    \item Apply \textbf{2D convolutions} to extract spatial features:
+    \begin{itemize}
+        \item Input: Binary mask (single channel).
+        \item Conv layers: 3–4 layers with ReLU activations, stride 1.
+        \item Output: Feature map of shape $(256 \times 256, C)$ where $C = 256$.
+    \end{itemize}
+    \item Element-wise sum with the Image Embedding:
+       \[ \mathbf{z}_{\text{fused}} = \mathbf{z}_{\text{image}} + \mathbf{z}_{\text{mask}} \]
+\end{enumerate}
+
+\textbf{Why Convolutions for Dense Prompts?}
+Convolutions naturally preserve spatial structure and efficiently encode spatial relationships (edges, corners, holes in the mask). This is superior to flattening the mask and using a linear layer, which would lose spatial coherence.
+
+\subsubsection{Text Prompts: CLIP Text Encoder}
+
+For free-form text prompts (e.g., "the dog's head"), SAM uses the pre-trained \textbf{CLIP text encoder}:
+\begin{itemize}
+    \item Input: Text string (e.g., "dog").
+    \item CLIP encoder: Transforms text to a 512-dimensional embedding.
+    \item Projection: Linear layer maps CLIP embedding to SAM's embedding dimension (256).
+\end{itemize}
+
+\textbf{Note:} Text prompts in SAM are more experimental and less central than spatial prompts. The paper includes preliminary results showing that text-guided segmentation is feasible but requires additional research.
+
+\subsection{Mask Decoder: Two-Way Transformer Fusion}
+
+The Mask Decoder is the "fusion engine" where Image Embeddings and Prompt Embeddings interact to produce masks. It is \textbf{explicitly designed for lightweight, real-time operation}.
+
+\subsubsection{Transformer Decoder Block with Two-Way Cross-Attention}
+
+\textbf{Standard Transformer Decoder Block:}
+In sequence-to-sequence models, a decoder block processes:
+\begin{itemize}
+    \item Queries from the decoder's previous layer.
+    \item Keys and values from the encoder.
+    \item Produces contextualized decoder outputs via cross-attention.
+\end{itemize}
+
+\textbf{SAM's Modified Decoder Block:}
+
+SAM uses a \textbf{two-way cross-attention} mechanism, departing from the standard one-directional attention:
+
+\begin{enumerate}
+    \item \textbf{Self-attention on prompts:} Prompts attend to themselves to capture relationships between multiple prompts (e.g., if multiple points are provided, they can "communicate").
+       \[ \mathbf{A}_{\text{prompt}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{prompt}} \mathbf{K}_{\text{prompt}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{prompt}} \]
+
+    \item \textbf{Cross-attention (prompt $\rightarrow$ image):} Prompts query the Image Embedding to extract relevant regions.
+       \[ \mathbf{A}_{\text{p2i}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{prompt}} \mathbf{K}_{\text{image}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{image}} \]
+
+    \item \textbf{Cross-attention (image $\rightarrow$ prompt):} Conversely, the Image Embedding queries the Prompt Embedding to understand what the user is asking for.
+       \[ \mathbf{A}_{\text{i2p}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{image}} \mathbf{K}_{\text{prompt}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{prompt}} \]
+
+    \item \textbf{Update embeddings:} All three attention outputs are summed and passed through layer normalization and MLPs:
+       \[ \mathbf{z}'_{\text{prompt}} = \text{LN}(\mathbf{z}_{\text{prompt}} + \mathbf{A}_{\text{prompt}} + \mathbf{A}_{\text{p2i}}) \]
+       \[ \mathbf{z}'_{\text{image}} = \text{LN}(\mathbf{z}_{\text{image}} + \mathbf{A}_{\text{i2p}}) \]
+\end{enumerate}
+
+\textbf{Why Two-Way Attention?}
+
+\begin{itemize}
+    \item \textbf{Prompt $\rightarrow$ Image:} Locates regions relevant to the prompt (e.g., a point on a person's head emphasizes head regions in the image embedding).
+    \item \textbf{Image $\rightarrow$ Prompt:} Provides the image with information about what regions are salient given the prompt, enabling the image embedding to "understand" the query.
+\end{itemize}
+
+This bidirectional information flow is more expressive than one-way attention and allows the model to jointly refine both modalities.
+
+\subsubsection{Dynamic Mask Prediction Head}
+
+After two stacked Transformer decoder blocks, the system predicts masks via a \textbf{dynamic linear classifier}.
+
+\textbf{Architecture:}
+\begin{enumerate}
+    \item Extract the prompt's feature vector (a single output token, dimension 256).
+    \item Pass through an MLP to produce \textbf{dynamic classification weights} (a 256-dimensional vector).
+    \item These weights are applied as a linear classifier to the Image Embedding:
+       \[ \mathbf{m}_{\text{logits}} = \mathbf{w}_{\text{dynamic}} \cdot \mathbf{z}_{\text{image}}^T \]
+       where $\mathbf{z}_{\text{image}} \in \mathbb{R}^{(256 \times 256) \times 256}$ is the spatial image embedding.
+\end{enumerate}
+
+\textbf{Output:}
+\begin{itemize}
+    \item A $256 \times 256$ tensor of logits (one score per spatial location).
+    \item Sigmoid applied to convert to probabilities: $\mathbf{m}_{\text{prob}} = \sigma(\mathbf{m}_{\text{logits}})$.
+    \item Binary mask obtained via thresholding: $\mathbf{m}_{\text{binary}} = \mathbf{m}_{\text{prob}} > 0.5$.
+\end{itemize}
+
+\textbf{Why Dynamic Classification?}
+
+Static classifiers (learned once, fixed after training) cannot adapt to different prompts. Dynamic classifiers generate prompt-dependent weights, enabling the system to produce different segmentations for different prompts on the same image. This is essential for ambiguity handling (next section).
+
+\subsubsection{Multi-Output Mechanism: Predicting Three Masks}
+A critical feature is the ability to predict \textbf{three masks simultaneously} from a single prompt, each representing a different level of object granularity.
+
+\textbf{Implementation:}
+\begin{itemize}
+    \item The Mask Decoder outputs \textbf{three separate dynamic linear classifiers} (three distinct weight vectors $\mathbf{w}_1, \mathbf{w}_2, \mathbf{w}_3$).
+    \item Each produces a logit map: $\mathbf{m}_{i} = \mathbf{w}_i \cdot \mathbf{z}_{\text{image}}^T$ for $i \in \{1, 2, 3\}$.
+    \item Each mask has an associated \textbf{IoU prediction head} (a separate MLP predicting the expected IoU of that mask):
+      \[ \text{IoU}_i = \text{MLP}_{\text{IoU}}(\mathbf{p}) \]
+      where $\mathbf{p}$ is the prompt embedding.
+\end{itemize}
+
+\textbf{Training with Multiple Outputs (Minimum Loss):}
+
+During training, only the mask with the \textbf{minimum loss} to the ground truth is backpropagated:
+\[ \mathcal{L} = \min_{i=1}^{3} \mathcal{L}(\mathbf{m}_i, \mathbf{m}^*_{\text{gt}}) \]
+
+This forces the model to learn diverse mask predictions. For example:
+\begin{itemize}
+    \item Mask 1 might specialize in whole objects.
+    \item Mask 2 might specialize in parts (when a single point is ambiguous).
+    \item Mask 3 might specialize in sub-parts.
+\end{itemize}
+
+At inference, all three masks are returned to the user, ranked by predicted IoU score.
+
+\subsection{Embedding Space Alignment: Bringing Geometry and Semantics Together}
+
+The core challenge SAM solves is \textbf{aligning geometric prompts with semantic image understanding}.
+
+\textbf{The Alignment Mechanism:}
+
+\begin{enumerate}
+    \item \textbf{Image Embedding} encodes holistic semantic and spatial image information via MAE pre-training (captures "what is in this image and where").
+    \item \textbf{Prompt Embedding} encodes geometric specification (captures "where does the user want to focus").
+    \item \textbf{Cross-attention} in the decoder \textbf{computes relevance scores} between prompt locations and image regions:
+       \[ \text{Attention}(x, y) = \text{Softmax}\left(\frac{\text{sim}(\mathbf{p}, \mathbf{z}_{x,y})}{\sqrt{d}}\right) \]
+       where $\mathbf{p}$ is the prompt embedding and $\mathbf{z}_{x,y}$ is the image embedding at spatial location $(x, y)$.
+
+    \item \textbf{Weighted fusion} produces a mask:
+       \[ \mathbf{m}(x, y) = \sigma\left(\sum_{\text{all } x', y'} \text{Attention}(x', y') \cdot \mathbf{z}_{x',y'}\right) \]
+\end{enumerate}
+
+This process effectively "spreads" the geometric cue (a point) across the image via attention, activating regions that are coherently related to the prompt location.
+
+\section{Handling Ambiguity --- One Prompt, Multiple Valid Masks}
+
+\subsection{The Fundamental Ambiguity Problem}
+
+The driving insight behind SAM's design is that \textbf{image segmentation is inherently ambiguous when specified by weak prompts} (e.g., a single point click).
+
+\textbf{Classic Example:} If a user clicks on a shirt, the question "segment what the user clicked" could refer to:
+\begin{enumerate}
+    \item The \textbf{shirt itself} (the cloth material).
+    \item The \textbf{person wearing the shirt} (the whole body).
+    \item The \textbf{button on the shirt} (a sub-component).
+\end{enumerate}
+
+All three are \textbf{valid interpretations} of the same point click. Traditional segmentation models would predict a single mask, potentially "splitting the difference" and producing a suboptimal result. SAM's approach is to \textbf{predict all three valid segmentations simultaneously} and let the user (or downstream system) choose.
+
+\subsection{Architectural Solution: Multiple Output Tokens}
+
+\textbf{Design Choice:} Instead of a single output token in the Transformer decoder, SAM uses \textbf{three distinct output tokens}, each responsible for generating one of the three masks.
+
+\textbf{Token Dynamics:}
+
+\begin{enumerate}
+    \item The three output tokens start as \textbf{learnable embeddings} (initialized randomly during training, optimized via gradient descent).
+    \item During forward pass, each token interacts with the Image Embedding and Prompt Embedding via separate cross-attention heads:
+       \[ \mathbf{t}_i^{(\ell)} = \text{Attention}(\mathbf{t}_i^{(\ell-1)}, \mathbf{z}_{\text{image}}, \mathbf{z}_{\text{prompt}}) \]
+       where $\ell$ indexes Transformer decoder layers and $i \in \{1, 2, 3\}$.
+
+    \item After processing through all decoder layers, each token $\mathbf{t}_i$ has aggregated information from both the image and prompt in a token-specific manner.
+
+    \item Each token is then passed to a \textbf{separate dynamic linear classifier} (as described in Section 2.4.2):
+       \[ \mathbf{m}_i = \mathbf{W}_i \mathbf{t}_i \cdot \mathbf{z}_{\text{image}}^T \]
+\end{enumerate}
+
+\textbf{Why Three Output Tokens?}
+
+Empirical analysis during SAM's development (through visualization and ablation studies) revealed that most real-world segmentation ambiguities fit into three categories:
+\begin{itemize}
+    \item \textbf{Whole:} The primary, semantically coherent object.
+    \item \textbf{Part:} A major sub-component.
+    \item \textbf{Subpart:} A minor component within the part.
+\end{itemize}
+
+Nesting deeper than three levels (whole $>$ part $>$ subpart $>$ sub-subpart) is rare in natural images. Adding more tokens increases computation without capturing new ambiguities.
+
+\subsection{Training Dynamics: Minimum Loss Over Masks}
+
+The critical training innovation is the \textbf{minimum loss} strategy over the three mask outputs.
+
+\textbf{Formal Definition:}
+
+For a training sample with ground-truth mask $\mathbf{m}^*$, the loss is:
+
+\[ \mathcal{L}_{\text{multi}} = \min_{i=1}^{3} \mathcal{L}_i(\mathbf{m}_i, \mathbf{m}^*) \]
+
+where $\mathcal{L}_i$ is the loss for mask $i$.
+
+\textbf{Gradient Flow:}
+
+\begin{itemize}
+    \item Only the mask with the minimum loss receives gradients (backpropagation is selective).
+    \item This forces each output token to specialize: different tokens learn to produce different valid segmentations.
+    \item Over many training iterations, the three tokens learn complementary modes.
+\end{itemize}
+
+\textbf{Why Minimum Loss?}
+
+If we used \textbf{mean loss} (average over all three masks), the model might collapse to predicting three nearly-identical masks (the global optimum of mean loss is when all three match). Minimum loss prevents this collapse by rewarding any single mask that matches the ground truth. This encourages diversity.
+
+\subsection{IoU Prediction: Ranking the Three Masks}
+
+At inference, all three masks are returned, but they are \textbf{ranked by predicted IoU score}. This allows users or downstream systems to select the mask that is most likely to be correct.
+
+\textbf{IoU Prediction Head:}
+
+A separate MLP predicts the expected IoU of each mask:
+
+\[ \text{IoU}_i = \text{MLP}_{\text{IoU}}(\mathbf{t}_i) \]
+
+where $\mathbf{t}_i$ is the $i$-th output token after decoder processing.
+
+\textbf{Training Signal:}
+
+The IoU prediction head is supervised using the actual IoU between predicted and ground-truth masks:
+
+\[ \mathcal{L}_{\text{IoU}} = \text{MSE}(\text{IoU}_i, \text{ActualIoU}(\mathbf{m}_i, \mathbf{m}^*)) \]
+
+\textbf{Interpretation:}
+
+The model learns to estimate its own confidence in each mask, akin to uncertainty quantification. This enables the system to auto-select the most likely correct segmentation or to alert the user when all three predictions are low-confidence (suggesting the prompt is fundamentally ambiguous or invalid).
+
+\subsection{Handling Ambiguity in Practice}
+
+\textbf{Scenario 1: Unambiguous Point Prompt}
+
+User clicks on a car's hood (unambiguous). The three output tokens may predict:
+\begin{enumerate}
+    \item Mask 1 (highest IoU): The whole car body.
+    \item Mask 2 (medium IoU): The hood itself.
+    \item Mask 3 (low IoU): A sub-component (windshield).
+\end{enumerate}
+
+The system auto-ranks them by predicted IoU and presents Mask 1 as the primary result. The user can select Masks 2 or 3 if desired.
+
+\textbf{Scenario 2: Ambiguous Point Prompt}
+
+User clicks on a shirt. The three output tokens predict:
+\begin{enumerate}
+    \item Mask 1 (high IoU): The person (body + shirt).
+    \item Mask 2 (high IoU): The shirt only.
+    \item Mask 3 (low IoU): A button.
+\end{enumerate}
+
+The predicted IoUs for Masks 1 and 2 are similar, indicating ambiguity. The system can present both to the user, allowing them to choose. Alternatively, the user can add a second point (on the bare skin) to disambiguate.
+
+\textbf{Scenario 3: Multiple Prompts}
+
+For robustness, the model can aggregate information from multiple prompts. If a user provides two points (one inside the shirt, one on bare skin), the Prompt Encoder generates two embeddings that are fused via self-attention. The decoder then produces masks that respect both constraints.
+
+\section{Training Dynamics}
+
+\subsection{Loss Functions: Focal Loss and Dice Loss}
+
+SAM uses a \textbf{linear combination of two complementary loss functions} to balance pixel-level accuracy with region-level coverage.
+
+\subsubsection{Focal Loss for Hard Example Mining}
+
+\textbf{Motivation:}
+
+In segmentation, most pixels are background (sky, grass, walls). A standard cross-entropy loss $-\log(p)$ treats all pixels equally. The model can achieve high overall accuracy by predicting background for most pixels, even if it fails catastrophically on small objects or boundaries.
+
+\textbf{Focal Loss Definition:}
+
+\[ \mathcal{L}_{\text{Focal}} = -\alpha(1 - p_t)^\gamma \log(p_t) \]
+
+where:
+\begin{itemize}
+    \item $p_t$ is the model's probability of the correct class (foreground or background).
+    \item $\alpha$ is a weighting factor (typically 0.25 for foreground vs. 0.75 for background to handle class imbalance).
+    \item $\gamma$ is the focusing parameter (typically 2), which controls how much the loss down-weights easy examples.
+\end{itemize}
+
+\textbf{Behavior:}
+
+\begin{itemize}
+    \item For \textbf{easy examples} (high $p_t$, e.g., clearly background pixels): $(1 - p_t)^\gamma$ is small, so loss is down-weighted. The model spends less gradient on obvious cases.
+    \item For \textbf{hard examples} (low $p_t$, e.g., boundary pixels or small object interiors): $(1 - p_t)^\gamma$ is large, so loss is amplified. The model focuses optimization on difficult cases.
+\end{itemize}
+
+\textbf{Gradient Magnitude:}
+
+The gradient of focal loss with respect to the model's logit is proportional to $(1 - p_t)^\gamma$, meaning gradients are naturally larger for hard examples. This is the mechanism that enables hard example mining.
+
+\subsubsection{Dice Loss for Region-Level Accuracy}
+
+\textbf{Motivation:}
+
+Focal loss is pixel-level (treats each pixel independently). It does not directly optimize for region-level agreement (overlap between predicted and ground-truth masks). Dice loss (based on the Dice coefficient, a region-level metric) directly optimizes for overlap.
+
+\textbf{Dice Loss Definition:}
+
+The Dice coefficient is:
+
+\[ \text{Dice} = \frac{2|Y \cap G|}{|Y| + |G|} \]
+
+where $Y$ is the predicted mask and $G$ is the ground-truth mask.
+
+Dice loss is:
+
+\[ \mathcal{L}_{\text{Dice}} = 1 - \text{Dice} = 1 - \frac{2|Y \cap G|}{|Y| + |G|} \]
+
+\textbf{Behavior:}
+
+\begin{itemize}
+    \item Dice loss directly minimizes prediction-to-ground-truth divergence in terms of region overlap.
+    \item It is particularly effective for \textbf{imbalanced datasets} where the foreground is small relative to the background. A pixel-level loss might barely notice a small object, but Dice loss captures it prominently.
+\end{itemize}
+
+\textbf{Continuous Approximation:}
+
+In practice, Dice loss is often computed on soft predictions (probabilities before thresholding):
+
+\[ \mathcal{L}_{\text{Dice}} = 1 - \frac{2\sum_{\mathbf{x}} y(\mathbf{x}) g(\mathbf{x})}{\sum_{\mathbf{x}} y^2(\mathbf{x}) + \sum_{\mathbf{x}} g^2(\mathbf{x})} \]
+
+where $y(\mathbf{x})$ and $g(\mathbf{x})$ are the predicted and ground-truth probability maps (0–1 valued).
+
+\subsubsection{Combined Loss}
+
+SAM combines both losses with a linear weight:
+
+\[ \mathcal{L}_{\text{total}} = \lambda_{\text{Focal}} \mathcal{L}_{\text{Focal}} + \lambda_{\text{Dice}} \mathcal{L}_{\text{Dice}} \]
+
+Typical weights: $\lambda_{\text{Focal}} = 1$, $\lambda_{\text{Dice}} = 1$ (equal weighting).
+
+\textbf{Synergy:}
+
+\begin{itemize}
+    \item Focal loss focuses on hard pixels (boundaries, small objects).
+    \item Dice loss ensures overall region overlap.
+    \item Together, they optimize both local precision (boundaries) and global coverage (region completeness).
+\end{itemize}
+
+\subsection{Training Regimen: Simulated Interactive Prompts}
+
+SAM's training does not require ground-truth prompts (users clicking); instead, the model is trained with \textbf{synthesized prompts} that simulate user interaction.
+
+\subsubsection{Prompt Sampling During Training}
+
+For each training sample with ground-truth mask $\mathbf{m}^*$:
+
+\begin{enumerate}
+    \item \textbf{Iteration 1:} Randomly sample a single foreground point from within the mask $\mathbf{m}^*$ and a single background point from outside.
+    \item \textbf{Iterations 2–11:} Iteratively sample additional points, incorporating feedback.
+    \begin{itemize}
+        \item If the current prediction is correct (IoU > threshold), stop.
+        \item Otherwise, sample an additional point in a region where the prediction differs most from ground truth.
+    \end{itemize}
+
+    \item \textbf{Loss Computation:} For each iteration, compute the loss (Focal + Dice) on the predicted mask.
+\end{enumerate}
+
+\textbf{Why 11 Rounds?}
+
+Empirically, 11 rounds (random prompt $\rightarrow$ 10 feedback iterations) balances training time with convergence. This matches typical interactive scenarios where users provide $\sim$10 refinement clicks.
+
+\subsubsection{Mixture of Geometric and Text Prompts}
+
+During training:
+\begin{itemize}
+    \item 50\% of the time, prompts are \textbf{geometric} (points, boxes, masks).
+    \item 50\% of the time, prompts include \textbf{text} (e.g., "dog").
+\end{itemize}
+
+For text prompts, SAM uses:
+\begin{itemize}
+    \item CLIP text encoder to embed the text.
+    \item Spatial localization to determine where in the image that text concept appears.
+\end{itemize}
+
+This ensures the model learns to handle diverse prompt modalities.
+
+\subsubsection{Training on Ambiguous Masks}
+
+A critical training innovation: SAM is explicitly trained to handle \textbf{ambiguous masks}. If a point lies on an object boundary or on a region with multiple interpretations, the ground-truth annotation might not uniquely define a mask.
+
+\textbf{Solution:} SAM is trained with the \textbf{minimum loss} strategy (as described in Section 3.3). This allows the model to learn multiple valid outputs without catastrophic forgetting.
+
+\subsection{Optimization and Convergence}
+
+\textbf{Optimizer:} Adam with standard hyperparameters (learning rate 1e-4, weight decay 1e-6).
+
+\textbf{Learning Rate Schedule:} Cosine annealing with 160,000 training iterations (on 376,000 masks, $\sim$0.4 epochs over the training portion of SA-1B used at the time of publication).
+
+\textbf{Batch Size:} 256 (distributed across 64 TPU-v4 cores).
+
+\textbf{Training Duration:} $\sim$3 days on 64 TPU-v4 cores.
+
+\section{Inference and Computational Efficiency}
+
+\subsection{Two-Stage Inference}
+
+\textbf{Stage 1: Image Encoding (Offline, Amortized)}
+\begin{itemize}
+    \item Input: Image ($H \times W$ pixels).
+    \item Process: Feed through MAE pre-trained ViT-H.
+    \item Output: Image Embedding $(H/16) \times (W/16) \times 1280$ (for 16-pixel patches).
+    \item Latency: $\sim$50–100ms on GPU, seconds on CPU (negligible, often done offline).
+    \item \textbf{Amortization:} This step is performed once per image, regardless of the number of prompts.
+\end{itemize}
+
+\textbf{Stage 2: Prompt Encoding + Mask Decoding (Real-Time, Per-Prompt)}
+\begin{itemize}
+    \item Input: Cached Image Embedding + Prompt (point, box, text, or mask).
+    \item Process: Prompt Encoder $\rightarrow$ Two-way Transformer Decoder.
+    \item Output: 3 Masks + 3 IoU scores.
+    \item Latency: $\sim$50ms in web browser on CPU (no GPU required).
+    \item \textbf{Per-Prompt Amortization:} Fixed cost regardless of image resolution.
+\end{itemize}
+
+\subsection{Web Browser Efficiency}
+
+SAM's ability to run in a web browser with 50ms latency per prompt is remarkable and achieved through careful design:
+
+\begin{enumerate}
+    \item \textbf{Small Model Components:} Prompt Encoder and Mask Decoder are lightweight ($<$3\% of total model parameters).
+    \item \textbf{CPU Compatibility:} No CUDA-specific optimizations; uses standard WebGL/WebAssembly for browser computation.
+    \item \textbf{Cached Computation:} Image embedding is computed once (potentially on the server and sent to the browser) and reused.
+\end{enumerate}
+
+\section{Summary: The Unified System}
+
+SAM represents a unified solution to the foundation model problem for segmentation:
+
+\begin{enumerate}
+    \item \textbf{Task (Promptable Segmentation):} Trained on a diverse, billion-scale dataset using visual prompts.
+    \item \textbf{Model (Efficient Decoupled Architecture):} Separates expensive image encoding (once) from lightweight prompt decoding (amortized).
+    \item \textbf{Data Engine (Flywheel Effect):} Iteratively improved the model to enable increasingly automated data collection.
+    \item \textbf{Ambiguity Handling (Multiple Outputs):} Predicts three valid masks per prompt, handling real-world segmentation ambiguity.
+    \item \textbf{Zero-Shot Transfer:} Achieves strong performance on diverse downstream tasks without fine-tuning via prompt engineering.
+\end{enumerate}
+
+This design philosophy—decoupled computation, amortized inference, and multi-modal prompting—sets a new paradigm for interactive and automated segmentation systems.
+    \item Generate two "corner points": $(x_{\min}, y_{\min})$ and $(x_{\max}, y_{\max})$.
+\end{enumerate}
