@@ -75,3 +75,88 @@ The \texttt{ImageEncoderViT} serves as the backbone of the system, transforming 
 	\item \textbf{Neck and Final Embedding:} To prepare the features for the mask decoder, the tensor is permuted to a channel-first format $[B, D_{embed}, H_{p}, W_{p}]$. It then passes through a "neck" consisting of a $1\times1$ convolution, \texttt{LayerNorm2d}, a $3\times3$ convolution, and a final \texttt{LayerNorm2d} to refine the feature maps.
 	\item \textbf{Output:} The final image embedding is produced with shape $[B, C_{out}, H_{p}, W_{p}]$ (e.g., $[B, 256, 64, 64]$), representing the extracted features ready for downstream prompting.
 \end{enumerate}
+
+\subsection{Prompt Encoder - prompt\_encoder.py}
+The \texttt{PromptEncoder} is responsible for translating various user-defined prompts—such as points, bounding boxes, and low-resolution masks—into a unified embedding space compatible with the mask decoder. It categorizes inputs into sparse and dense representations to maintain architectural flexibility.
+
+\subsubsection{Sparse and Dense Representations}
+The encoder processes inputs through distinct pipelines based on their geometric properties:
+\begin{itemize}
+	\item \textbf{Point Prompts:} Input coordinates are normalized relative to the image size and transformed into positional encodings using random spatial frequencies. Each point is subsequently augmented with a learnable embedding that identifies it as either a foreground or background prompt.
+	\item \textbf{Box Prompts:} Bounding boxes are modeled as coordinate pairs representing the top-left and bottom-right corners. These are encoded similarly to points, with specific learnable corner embeddings added to distinguish the spatial boundaries.
+	\item \textbf{Mask Prompts:} Dense input masks are processed through the \texttt{mask\_downscaling} block, a sequence of three convolutional layers with GELU activations and \texttt{LayerNorm2d}. This reduces the spatial resolution to match the image embedding while increasing the channel depth to \texttt{embed\_dim}.
+\end{itemize}
+
+\subsubsection{Positional Encoding Logic}
+Spatial awareness is injected via the \texttt{PositionEmbeddingRandom} class, which utilizes a fixed Gaussian matrix to project coordinates into a high-dimensional space.
+\begin{enumerate}
+	\item \textbf{Sparse Transformation:} Coordinates are mapped to a sparse embedding of shape $[B, N, D_{embed}]$, where $N$ denotes the number of input prompts and $D_{embed}$ is the embedding dimension (standardly 256).
+	\item \textbf{Dense Transformation:} For mask inputs of shape $[B, 1, H_{mask}, W_{mask}]$, the downscaling operation produces a dense embedding of shape $[B, D_{embed}, H_{p}, W_{p}]$ (e.g., $[B, 256, 64, 64]$).
+	\item \textbf{Global Reference:} The module provides a dense positional encoding for the entire image grid via \texttt{get\_dense\_pe()}, yielding a tensor of shape $[1, D_{embed}, H_{p}, W_{p}]$.
+\end{enumerate}
+
+If no mask prompt is provided, the model utilizes a learnable \texttt{no\_mask\_embed} to act as a placeholder, ensuring the mask decoder always receives a consistent tensor shape for the dense prompt input.
+
+\subsection{Mask Decoder - mask\_decoder.py}
+The \texttt{MaskDecoder} is the final stage of the SAM architecture, responsible for translating the processed image features and prompt embeddings into specific segmentation masks and corresponding quality scores. It utilizes a transformer-based architecture to map the interaction between image and prompt data.
+
+\subsubsection{Architectural Components}
+The decoder integrates several specialized components to generate high-fidelity outputs:
+\begin{itemize}
+	\item \textbf{Output Tokens:} The model utilizes learnable embeddings, including an \texttt{iou\_token} to predict mask quality and a set of \texttt{mask\_tokens} used to handle mask disambiguation.
+	\item \textbf{Two-Way Transformer:} A transformer module facilitates cross-attention between the image embeddings and the prompt tokens, refining both sets of features simultaneously.
+	\item \textbf{Output Upscaling:} To restore spatial resolution, the decoder employs a sequence consisting of two transposed convolutions and \texttt{LayerNorm2d} layers. This blocks upscales the feature maps from the transformer back toward the original input resolution.
+	\item \textbf{Dynamic Hypernetworks:} Instead of static layers, the model uses \texttt{output\_hypernetworks\_mlps} to transform the refined mask tokens into weights for a final linear layer that predicts the masks.
+\end{itemize}
+
+\subsubsection{Forward Pass and Tensor Transformations}
+The \texttt{MaskDecoder} manages a complex flow of data to produce final predictions:
+\begin{enumerate}
+	\item \textbf{Token Concatenation:} The \texttt{iou\_token} and \texttt{mask\_tokens} are concatenated with the \texttt{sparse\_prompt\_embeddings} to form the initial token set for the transformer.
+	\item \textbf{Feature Integration:} Image embeddings from the encoder are combined with \texttt{dense\_prompt\_embeddings} and the image positional encodings (\texttt{image\_pe}).
+	\item \textbf{Transformer Execution:} The transformer processes these inputs, outputting refined hidden states for the tokens and an updated feature map.
+	\item \textbf{Mask Generation:} 
+	\begin{itemize}
+		\item The updated image features are upscaled to a shape of $[B, D_{embed}/8, H_{p} \times 4, W_{p} \times 4]$ (e.g., $[B, 32, 256, 256]$).
+		\item Mask tokens are passed through the hypernetwork MLPs to produce mask coefficients.
+		\item Final masks are generated via a spatially point-wise product between these coefficients and the upscaled embeddings.
+	\end{itemize}
+	\item \textbf{Quality Prediction:} The \texttt{iou\_token} output is passed through the \texttt{iou\_prediction\_head} (an MLP) to generate an Intersection-over-Union (IoU) score, estimating the quality of each predicted mask.
+\end{enumerate}
+
+\subsection{System Integration and End-to-End Inference - sam.py}
+The \texttt{Sam} class serves as the primary orchestrator that integrates the image encoder, prompt encoder, and mask decoder into a unified pipeline. It manages the full inference lifecycle, from raw image pre-processing to the generation of final binary masks at the original image resolution.
+
+\subsubsection{Pre-processing and Normalization}
+Before feature extraction, input images undergo a standardization process within the \texttt{preprocess} method to ensure compatibility with the Vision Transformer backbone:
+\begin{itemize}
+	\item \textbf{Color Normalization:} Pixel values are normalized using the specific mean ($[123.675, 116.28, 103.53]$) and standard deviation\\ ($[58.395, 57.12, 57.375]$) constants registered in the model's buffers.
+	\item \textbf{Spatial Padding:} Images are padded to a square format matching the encoder's \texttt{img\_size} (standardly 1024) to maintain consistent patch dimensions and spatial alignment.
+\end{itemize}
+
+\subsubsection{Post-processing and Mask Refinement}
+The raw outputs from the mask decoder are low-resolution logits ($256 \times 256$). To produce the final output, the \texttt{postprocess\_masks} function performs the following operations:
+\begin{itemize}
+	\item \textbf{Rescaling:} The logits are bilinearly interpolated back to the model's internal input resolution ($1024 \times 1024$).
+	\item \textbf{Padding Removal:} Any padding introduced during the pre-processing stage is cropped based on the \texttt{input\_size} to restore the original aspect ratio.
+	\item \textbf{Final Restoration:} The masks are interpolated to the image's \texttt{original\_size} and thresholded against \texttt{mask\_threshold} (defaulting to $0.0$) to produce the final binary segmentation maps.
+\end{itemize}
+
+\subsubsection{Architecture Summary Table}
+The following table summarizes the primary tensor transformations across the Segment Anything Model pipeline.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\textbf{Stage} & \textbf{Input Shape} & \textbf{Output Shape} \\ \hline
+		Image Encoder (ViT) & $[B, 3, 1024, 1024]$ & $[B, 256, 64, 64]$ \\ \hline
+		Prompt Encoder (Sparse) & Coordinates/Labels & $[B, N, 256]$ \\ \hline
+		Prompt Encoder (Dense) & $[B, 1, 256, 256]$ & $[B, 256, 64, 64]$ \\ \hline
+		Mask Decoder (Logits) & Combined Embeddings & $[B, C, 256, 256]$ \\ \hline
+		Final Prediction & $[B, C, 256, 256]$ & $[B, C, H_{orig}, W_{orig}]$ \\ \hline
+	\end{tabular}
+	\caption{Tensor shapes and data flow through the SAM architecture.}
+\end{table}
+
+This architecture allows the model to output multiple masks (typically three) for a single prompt, ensuring robustness in ambiguous scenarios where a point or box might refer to multiple valid sub-parts of an object.
