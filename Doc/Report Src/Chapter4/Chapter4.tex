@@ -46,3 +46,32 @@ Since the Vision Transformer (ViT) image encoder is computationally expensive, t
 
 \subsubsection{Deployment to Web Frontend}
 For the static web application to function, the generated outputs must be manually integrated into the frontend assets. Users must copy the exported ONNX model (\texttt{.onnx}) and the pre-computed image embeddings (\texttt{.npy}) into the \texttt{demo} subfolder. This architecture allows the web app to perform a simple "lookup" of image features, enabling the SAM mask decoder to generate segments in response to user clicks with millisecond latency.
+
+\section{Model Architecture}
+The Segment Anything Model (SAM) inference pipeline consists of three primary stages: image encoding, prompt encoding, and mask decoding. This section details the architectural components implemented in the core codebase.
+
+\subsection{Common Architectural Blocks - common.py}
+The model utilizes foundational layers defined in \texttt{common.py} to maintain consistency across its sub-networks:
+\begin{itemize}
+	\item \textbf{MLPBlock:} A standard Feed-Forward Network (FFN) that utilizes two linear layers with a GELU activation function. It projects input embeddings into a higher-dimensional space (\texttt{mlp\_dim}) before restoring the original embedding dimension.
+	\item \textbf{LayerNorm2d:} A specialized normalization layer designed for 2D spatial data. Unlike standard \texttt{LayerNorm}, which typically operates on the last dimension, this implementation calculates mean and variance across the channel dimension while preserving spatial height and width. This is essential for maintaining feature map integrity in convolutional "neck" modules.
+\end{itemize}
+
+\subsection{Image Encoder - image\_encoder.py}
+The \texttt{ImageEncoderViT} serves as the backbone of the system, transforming raw imagery into high-dimensional feature embeddings. The architectural flow and corresponding tensor transformations are summarized below:
+
+\begin{enumerate}
+	\item \textbf{Initial Projection:} The input image $x: [B, C_{in}, H_{img}, W_{img}] $ (e.g., $[B, 3, 1024,1024]$) is processed by the \texttt{PatchEmbed} module. This utilizes a convolutional layer with a $16 \times 16$ kernel and stride, divides the image into patches and an convolutional layer is applied, yielding a tensor of shape $[B, H_{p}, W_{p}, D_{embed}]$ (e.g., $[B, 64, 64, 768]$).
+%	\item \textbf{Positional Encoding:} If enabled, absolute positional embeddings are added to the patch tokens to provide the transformer blocks with spatial context.
+	\item \textbf{Positional Encoding:} To provide the transformer blocks with spatial context, the model integrates absolute positional embeddings. When \texttt{use\_abs\_pos} is enabled, the parameter \texttt{self.pos\_embed} is initialized as a learnable tensor of zeros with the shape $[1, H_{p}, W_{p}, D_{embed}]$ (e.g., $[1, 64, 64, 768]$). During the forward pass, this spatial information is injected into the patch tokens via element-wise addition: $x = x + \text{self.pos\_embed}$. 
+	
+	This zero-initialization strategy is a standard practice in Vision Transformer architectures, such as ViTDet, to avoid introducing stochastic noise during the initial stages of training. Since the self-attention mechanism is inherently permutation-invariant, it treats patches as an unordered set. By utilizing a learnable parameter starting from zero, the model can adaptively learn optimal spatial encodings tailored specifically for dense segmentation tasks without an initial positional bias. Furthermore, this parameter acts as a placeholder that is typically overwritten by learned values when loading pre-trained checkpoints from large-scale datasets like SA-1B.
+	\item \textbf{Transformer Processing:} The data passes through a sequence of \textbf{12 \texttt{Block} modules}, where each block functions as a transformer encoder. Within these blocks:
+	\begin{itemize}
+		\item Each encoder utilizes \textbf{12 multi-attention heads} to process the embeddings.
+		\item The attention mechanism can be configured for either global attention or window-based attention to optimize computational efficiency.
+		\item Each block applies \texttt{LayerNorm} before the attention layer and again before a \texttt{MLPBlock}, utilizing residual connections to facilitate gradient flow.
+	\end{itemize}
+	\item \textbf{Neck and Final Embedding:} To prepare the features for the mask decoder, the tensor is permuted to a channel-first format $[B, D_{embed}, H_{p}, W_{p}]$. It then passes through a "neck" consisting of a $1\times1$ convolution, \texttt{LayerNorm2d}, a $3\times3$ convolution, and a final \texttt{LayerNorm2d} to refine the feature maps.
+	\item \textbf{Output:} The final image embedding is produced with shape $[B, C_{out}, H_{p}, W_{p}]$ (e.g., $[B, 256, 64, 64]$), representing the extracted features ready for downstream prompting.
+\end{enumerate}
