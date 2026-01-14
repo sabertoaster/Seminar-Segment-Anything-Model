@@ -1,1 +1,48 @@
-\chapter{Cài đặt và thử nghiệm}
+%\chapter{Cài đặt và thử nghiệm}
+\chapter{Implementation and Experiment}
+To evaluate the practical capabilities and performance of the Segment Anything Model (SAM), this study utilizes the official implementation provided by Meta AI Research. The core architecture remains consistent with the original proposal; however, the codebase was streamlined by removing extraneous files and modules not required for this specific demonstration. The complete source code and configuration files used in these experiments are available at the following repository: \url{https://github.com/facebookresearch/segment-anything}.
+
+\section{Experimental Environment}
+The experiments were conducted in a \textbf{Python 3.11} environment. To ensure the smooth execution of the Segment Anything Model and the evaluation of the results, the following core libraries and frameworks were utilized:
+
+\begin{itemize}
+	\item \textbf{Deep Learning Frameworks:} \texttt{torch} and \texttt{torchvision} for model loading and inference.
+	\item \textbf{Optimization and Deployment:} \texttt{onnx}, \texttt{onnxruntime}, and \texttt{onnxscript} for model exportation and runtime acceleration.
+	\item \textbf{Image Processing and Data Handling:} \texttt{opencv-python} for real-time computer vision tasks and \texttt{pycocotools} for performance metric calculations.
+	\item \textbf{Visualization and Development:} \texttt{matplotlib} for generating result plots and \texttt{jupyter} for interactive experimentation.
+\end{itemize}
+
+\section{Model Checkpoints and Demonstration Modes}
+Due to storage constraints, model weights are not included directly in the repository. Users are encouraged to download the pre-trained checkpoints as specified in the \texttt{Source\_code/README.md} file. The implementation supports three distinct Vision Transformer (ViT) backbones: \textbf{SAM-H} (\texttt{vit\_h}), \textbf{SAM-L} (\texttt{vit\_l}), and \textbf{SAM-B} (\texttt{vit\_b}).
+
+The demonstration is structured into three primary interfaces:
+
+\begin{enumerate}
+	\item \textbf{Interactive Notebooks:} Located in \texttt{Source\_code/notebooks/}, these provide a guided environment for manual prompting and automatic mask generation. Users can follow the inline instructions within \texttt{predictor\_example.ipynb} and\\ \texttt{automatic\_mask\_generator\_example.ipynb}.
+	
+	\item \textbf{Command Line Interface (CLI):} For batch processing, a Python script is provided. After navigating to the \texttt{Source\_code} directory, the following command structure is used:
+	\begin{lstlisting}
+		python scripts/amg.py --checkpoint <path/to/checkpoint> --model-type <model_type> --input <image_or_folder> --output <path/to/output>
+	\end{lstlisting}
+	
+	\item \textbf{Web-Based Application:} A specialized demo requiring \textbf{Node.js} and \textbf{Yarn}. This mode involves a two-step process: exporting image embeddings and the ONNX model before building the static web application. Detailed setup steps are found in \texttt{Source\_code/demo/README.md}.
+\end{enumerate}
+
+\subsection{Pre-processing for Web Demonstration}
+To achieve real-time interactivity within the web-based demonstration, a decoupled inference strategy is employed. This requires migrating the model from a heavy Python environment to a lightweight client-side runtime via the following pre-processing steps:
+
+\subsubsection{ONNX Model Export}
+The SAM mask decoder must be exported to the ONNX format to optimize inference performance in the browser. This can be accomplished through two methods:
+\begin{itemize}
+	\item \textbf{Interactive Export:} Using the\\ \texttt{Source\_code/notebooks/onnx\_model\_example.ipynb} notebook for a guided, step-by-step export process.
+	\item \textbf{Script-Based Export:} Executing the automated script from the \texttt{Source\_code} directory:
+	\begin{lstlisting}
+		python scripts/export_onnx_model.py --checkpoint <path/to/checkpoint> --model-type <model_type> --output <path/to/output>
+	\end{lstlisting}
+\end{itemize}
+
+\subsubsection{Image Embedding Extraction}
+Since the Vision Transformer (ViT) image encoder is computationally expensive, the web demo does not run it locally in the browser. Instead, users must pre-calculate the high-dimensional image embeddings for each target image. This extraction is performed using the utilities provided in \texttt{Source\_code/notebooks/onnx\_model\_example.ipynb}.
+
+\subsubsection{Deployment to Web Frontend}
+For the static web application to function, the generated outputs must be manually integrated into the frontend assets. Users must copy the exported ONNX model (\texttt{.onnx}) and the pre-computed image embeddings (\texttt{.npy}) into the \texttt{demo} subfolder. This architecture allows the web app to perform a simple "lookup" of image features, enabling the SAM mask decoder to generate segments in response to user clicks with millisecond latency.
