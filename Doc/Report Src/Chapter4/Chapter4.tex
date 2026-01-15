@@ -72,19 +72,22 @@ The \texttt{ImageEncoderViT} serves as the backbone of the system, transforming 
 		\item The attention mechanism can be configured for either global attention or window-based attention to optimize computational efficiency.
 		\item Each block applies \texttt{LayerNorm} before the attention layer and again before a \texttt{MLPBlock}, utilizing residual connections to facilitate gradient flow.
 	\end{itemize}
-	\item \textbf{Neck and Final Embedding:} To prepare the features for the mask decoder, the tensor is permuted to a channel-first format $[B, D_{embed}, H_{p}, W_{p}]$. It then passes through a "neck" consisting of a $1\times1$ convolution, \texttt{LayerNorm2d}, a $3\times3$ convolution, and a final \texttt{LayerNorm2d} to refine the feature maps.
-	\item \textbf{Output:} The final image embedding is produced with shape $[B, C_{out}, H_{p}, W_{p}]$ (e.g., $[B, 256, 64, 64]$), representing the extracted features ready for downstream prompting.
+	\item \textbf{Neck and Final Embedding:} To prepare the features for the mask decoder, the tensor is permuted to a channel-first format\\ $[B, D_{embed}, H_{p}, W_{p}]$. It then passes through a "neck" consisting of a $1\times1$ convolution, \texttt{LayerNorm2d}, a $3\times3$ convolution, and a final \texttt{LayerNorm2d} to refine the feature maps.
+	\item \textbf{Output:} The final image embedding is produced with shape\\ $[B, C_{out}, H_{p}, W_{p}]$ (e.g., $[B, 256, 64, 64]$), representing the extracted features ready for downstream prompting.
 \end{enumerate}
 
 \subsection{Prompt Encoder - prompt\_encoder.py}
 The \texttt{PromptEncoder} is responsible for translating various user-defined prompts—such as points, bounding boxes, and low-resolution masks—into a unified embedding space compatible with the mask decoder. It categorizes inputs into sparse and dense representations to maintain architectural flexibility.
 
 \subsubsection{Sparse and Dense Representations}
-The encoder processes inputs through distinct pipelines based on their geometric properties:
+The \texttt{PromptEncoder} processes multi-modal inputs through specialized pipelines determined by their geometric properties, mapping them into a unified embedding space for the mask decoder.
+
 \begin{itemize}
-	\item \textbf{Point Prompts:} Input coordinates are normalized relative to the image size and transformed into positional encodings using random spatial frequencies. Each point is subsequently augmented with a learnable embedding that identifies it as either a foreground or background prompt.
-	\item \textbf{Box Prompts:} Bounding boxes are modeled as coordinate pairs representing the top-left and bottom-right corners. These are encoded similarly to points, with specific learnable corner embeddings added to distinguish the spatial boundaries.
-	\item \textbf{Mask Prompts:} Dense input masks are processed through the \texttt{mask\_downscaling} block, a sequence of three convolutional layers with GELU activations and \texttt{LayerNorm2d}. This reduces the spatial resolution to match the image embedding while increasing the channel depth to \texttt{embed\_dim}.
+	\item \textbf{Point Prompts:} Input coordinates, provided as a tensor of shape $[B, N_{points}, 2]$, are normalized relative to the input image size. These coordinates are transformed into positional encodings via random spatial frequencies in the \texttt{PositionEmbeddingRandom} layer. Each point embedding is then augmented by a learnable vector that identifies the point as either a foreground or background prompt. The specific embedding is selected based on a corresponding label tensor of shape $[B, N_{points}]$.
+	
+	\item \textbf{Box Prompts:} Bounding boxes are modeled as coordinate pairs representing the top-left and bottom-right corners. The input of shape $[B, 4]$ is reshaped to $[B, 2, 2]$ and encoded using the same positional encoding logic as point prompts. To distinguish spatial boundaries, specific learnable corner embeddings are added to the corner encodings. For the purposes of this implementation and to ensure clarity in demonstration, the model currently supports one box prompt per image.
+	
+	\item \textbf{Mask Prompts:} Dense input masks with an initial shape \\ $[B, 1, H_{img}, W_{img}]$ are first interpolated to the required resolution before being processed by the \texttt{mask\_downscaling} block. This block consists of a sequence of two $2\times2$ convolutions (stride 2) and a final $1\times1$ convolution, interspersed with \texttt{LayerNorm2d} and GELU activations. This process reduces the spatial resolution by a factor of 4 to match the image embedding ($H_p, W_p$) while increasing the channel depth to \texttt{embed\_dim} (standardly 256).
 \end{itemize}
 
 \subsubsection{Positional Encoding Logic}
@@ -96,6 +99,53 @@ Spatial awareness is injected via the \texttt{PositionEmbeddingRandom} class, wh
 \end{enumerate}
 
 If no mask prompt is provided, the model utilizes a learnable \texttt{no\_mask\_embed} to act as a placeholder, ensuring the mask decoder always receives a consistent tensor shape for the dense prompt input.
+
+\subsection{Two-Way Transformer - transformer.py}
+The \texttt{TwoWayTransformer} serves as the core reasoning engine within the mask decoder. It is designed to facilitate a "two-way" interaction between the sparse prompt embeddings (queries) and the dense image embeddings (keys).
+
+\subsubsection{Architectural Design}
+As implemented in \texttt{transformer.py}, the module consists of a series of \texttt{TwoWayAttentionBlock} layers followed by a final attention operation:
+
+\begin{itemize}
+	\item \textbf{Layer Composition:} The transformer consists of a specified \texttt{depth} (number of layers), an \texttt{embedding\_dim} for channel consistency, and a multi-head attention mechanism with \texttt{num\_heads}.
+	
+	\item \textbf{Input Transformation:} Before processing, the 2D image embeddings of shape $[B, C, H, W]$ are flattened and permuted into a sequence format of shape $[B, H \times W, C]$ to represent image tokens.
+\end{itemize}
+
+\subsubsection{The Two-Way Attention Block}
+Each block in the transformer performs four distinct operations to refine the relationship between prompts and the image:
+
+\begin{enumerate}
+	\item \textbf{Sparse Self-Attention:} The prompt tokens perform self-attention to aggregate information between multiple prompts (e.g., multiple points or box corners).
+	
+	\item \textbf{Token-to-Image Cross-Attention:} Prompt tokens (queries) attend to the image embeddings (keys) to extract relevant spatial features.
+	
+	\item \textbf{MLP Block:} A point-wise \texttt{MLPBlock} is applied to the prompt tokens for feature transformation and projection.
+	
+	\item \textbf{Image-to-Token Cross-Attention:} In the "two-way" step, the image embeddings (now acting as queries) attend back to the prompt tokens to update the dense feature map based on the prompt locations.
+\end{enumerate}
+
+\subsubsection{Final Attention and Output}
+After the repeated blocks, the transformer performs a final attention pass where prompt tokens attend to the refined image embeddings.
+
+\begin{itemize}
+	\item \textbf{Positional Embedding Integration:} Throughout all attention steps, positional encodings for both the image (\texttt{image\_pe}) and prompts (\texttt{point\_embedding}) are added to the queries and keys to maintain spatial awareness.
+	
+	\item \textbf{Final Normalization:} The resulting prompt tokens are passed through a final \texttt{LayerNorm} before being returned to the mask decoder for final logit prediction.
+\end{itemize}
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|l|l|p{5cm}|}
+		\hline
+		\textbf{Component} & \textbf{Input Type} & \textbf{Role in SAM} \\ \hline
+		\texttt{self\_attn} & Sparse Tokens & Inter-prompt communication \\ \hline
+		\texttt{cross\_attn\_token\_to\_image} & Sparse $\to$ Dense & Prompt-driven feature extraction \\ \hline
+		\texttt{mlp} & Sparse Tokens & Feature projection and non-linearity \\ \hline
+		\texttt{cross\_attn\_image\_to\_token} & Dense $\to$ Sparse & Updating image features via prompts \\ \hline
+	\end{tabular}
+	\caption{Functional layers within the Two-Way Attention Block.}
+\end{table}
 
 \subsection{Mask Decoder - mask\_decoder.py}
 The \texttt{MaskDecoder} is the final stage of the SAM architecture, responsible for translating the processed image features and prompt embeddings into specific segmentation masks and corresponding quality scores. It utilizes a transformer-based architecture to map the interaction between image and prompt data.
@@ -117,7 +167,7 @@ The \texttt{MaskDecoder} manages a complex flow of data to produce final predict
 	\item \textbf{Transformer Execution:} The transformer processes these inputs, outputting refined hidden states for the tokens and an updated feature map.
 	\item \textbf{Mask Generation:} 
 	\begin{itemize}
-		\item The updated image features are upscaled to a shape of $[B, D_{embed}/8, H_{p} \times 4, W_{p} \times 4]$ (e.g., $[B, 32, 256, 256]$).
+		\item The updated image features are upscaled to a shape of\\ $[B, D_{embed}/8, H_{p} \times 4, W_{p} \times 4]$ (e.g., $[B, 32, 256, 256]$).
 		\item Mask tokens are passed through the hypernetwork MLPs to produce mask coefficients.
 		\item Final masks are generated via a spatially point-wise product between these coefficients and the upscaled embeddings.
 	\end{itemize}
@@ -145,7 +195,7 @@ The raw outputs from the mask decoder are low-resolution logits ($256 \times 256
 \subsubsection{Architecture Summary Table}
 The following table summarizes the primary tensor transformations across the Segment Anything Model pipeline.
 
-\begin{table}[h]
+\begin{table}[H]
 	\centering
 	\begin{tabular}{|l|l|l|}
 		\hline
@@ -160,3 +210,93 @@ The following table summarizes the primary tensor transformations across the Seg
 \end{table}
 
 This architecture allows the model to output multiple masks (typically three) for a single prompt, ensuring robustness in ambiguous scenarios where a point or box might refer to multiple valid sub-parts of an object.
+
+\section{SAM Predictor - predictor.py}
+The \texttt{SamPredictor} class provides a high-level interface for using the Segment Anything Model to predict masks based on user-defined prompts. It is specifically designed to handle the initial heavy computation of image embeddings once, allowing for subsequent, efficient real-time mask prediction with varying prompts.
+
+\subsubsection{Image Pre-processing and Embedding}
+Before prediction, an image must be registered using the \texttt{set\_image} method, which executes the following pipeline:
+
+\begin{itemize}
+	\item \textbf{Color Format Adjustment:} The input image, expected as an \texttt{HWC uint8} array, is converted to the model's internal RGB format if necessary.
+	
+	\item \textbf{Spatial Transformation:} The image is resized using the\\ \texttt{ResizeLongestSide} utility to ensure its longest dimension matches the image encoder's expected input size (standardly 1024).
+	
+	\textbf{Feature Extraction:} The transformed image is passed through the \texttt{ImageEncoderViT} to calculate the image embeddings, which are then cached within the predictor as the \texttt{features} attribute.
+\end{itemize}
+
+\subsubsection{Prompt Processing and Mask Prediction}
+Once the image is set, the \texttt{predict} method facilitates mask generation by processing point, box, or mask prompts:
+
+\begin{enumerate}
+	\item \textbf{Prompt Transformation:} Input coordinates (points and boxes) are transformed from the original image coordinate frame to the model's resized input frame.
+	
+	\item \textbf{Prompt Embedding:} These transformed prompts are passed to the \texttt{PromptEncoder} to generate sparse and dense embeddings.
+	
+	\item \textbf{Decoding:} The cached image embeddings and the new prompt embeddings are processed by the \texttt{MaskDecoder} to generate low-resolution mask logits and quality scores.
+	
+	\item \textbf{Post-processing:} The logits are upscaled to the original image resolution using bilinear interpolation and thresholded to produce binary masks.
+\end{enumerate}
+
+\subsubsection{Multi-mask Output and Refinement}
+A key feature of the predictor is the \texttt{multimask\_output} toggle. When enabled, the model returns three distinct masks for each prompt, which is particularly effective for resolving ambiguity in sparse inputs, such as a single point click. Furthermore, the predictor returns low-resolution logits ($256 \times 256$) that can be fed back into the model as a \texttt{mask\_input} for iterative mask refinement.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|p{10cm}|} 
+		\hline 
+		\textbf{Predictor Method} & \textbf{Function} \\ \hline
+		\texttt{set\_image} & Calculates and caches image embeddings for repeated use \\ \hline
+		\texttt{predict} & Predicts masks for NumPy inputs and handles coordinate scaling \\ \hline
+		\texttt{predict\_torch} & Core prediction method taking pre-transformed batched tensors \\ \hline
+		\texttt{reset\_image} & Clears cached embeddings and image metadata \\ \hline
+	\end{tabular}
+	\caption{Key functional methods of the \texttt{SamPredictor} class.}
+\end{table}
+
+\section{Automatic Mask Generator -\\ automatic\_mask\_generator.py}
+The \texttt{SamAutomaticMaskGenerator} class implements the "Everything" mode of the Segment Anything Model, enabling the generation of masks for an entire image without manual prompting. It achieves this by sampling a systematic grid of point prompts and filtering the resulting predictions based on quality and redundancy.
+
+\subsubsection{Point Selection and Crop Strategy}
+To ensure total coverage of the image, the generator employs a multi-layered sampling approach:
+
+\begin{itemize}
+	\item \textbf{Point Grids:} By default, the model samples a grid of $32 \times 32$ points across the image. For higher resolution or complex scenes, the \texttt{crop\_n\_layers} parameter allows the model to run again on overlapping image crops, increasing the density of point prompts in localized regions.
+	
+	\item \textbf{Batch Processing:} To optimize GPU utilization, points are processed in batches (defaulting to 64 points per batch) rather than individually.
+\end{itemize}
+
+\subsubsection{Filtering and Quality Control}
+Since a dense grid of points generates many overlapping or low-quality masks, the following filtering pipeline is applied:
+
+\begin{enumerate}
+	\item \textbf{Predicted IoU Threshold:} Masks are discarded if the model's own quality prediction (\texttt{predicted\_iou}) falls below a set threshold (standardly 0.88).
+	
+	\item \textbf{Stability Score:} The \texttt{calculate\_stability\_score} function measures how much a mask changes when the binarization threshold is shifted. Masks that are highly sensitive to these shifts are considered unstable and are filtered out.
+	
+	\item \textbf{Boundary Filtering:} Boxes that touch the edge of an image crop are often incomplete and are removed to prevent artifacts.
+	
+	\item \textbf{Non-Maximal Suppression (NMS):} To resolve duplicate predictions, NMS is performed twice—first within individual crops\\ (\texttt{box\_nms\_thresh}) and subsequently across different crop layers\\ (\texttt{crop\_nms\_thresh}).
+\end{enumerate}
+
+\subsubsection{Post-processing}
+The final stage of the automatic pipeline involves refining the geometric properties of the generated segments:
+
+\begin{itemize}
+	\item \textbf{Small Region Removal:} Utilizing OpenCV, the model can remove disconnected fragments or fill small holes within masks if their area is below the \texttt{min\_mask\_region\_area}.
+	
+	\item \textbf{Output Encoding:} To manage memory efficiency for high-resolution images, masks can be returned as Run-Length Encodings (RLE) or COCO-compatible RLEs instead of raw binary arrays.
+\end{itemize}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|l|l|}
+		\hline
+		\textbf{Parameter} & \textbf{Default Value} & \textbf{Function} \\ \hline
+		\texttt{points\_per\_side} & 32 & Density of the initial point grid \\ \hline
+		\texttt{pred\_iou\_thresh} & 0.88 & Minimum predicted mask quality \\ \hline
+		\texttt{stability\_score\_thresh} & 0.95 & Filter for binarization stability \\ \hline
+		\texttt{box\_nms\_thresh} & 0.70 & Threshold for duplicate removal \\ \hline
+	\end{tabular}
+	\caption{Key configuration parameters for the Automatic Mask Generator.}
+\end{table}
