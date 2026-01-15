@@ -60,9 +60,8 @@ class SamOnnxModel(nn.Module):
         )
 
         for i in range(self.model.prompt_encoder.num_point_embeddings):
-            point_embedding = point_embedding + self.model.prompt_encoder.point_embeddings[
-                i
-            ].weight * (point_labels == i)
+            point_embedding = point_embedding + \
+                self.model.prompt_encoder.point_embeddings[i].weight * (point_labels == i)
 
         return point_embedding
 
@@ -82,7 +81,10 @@ class SamOnnxModel(nn.Module):
         )
 
         prepadded_size = self.resize_longest_image_size(orig_im_size, self.img_size).to(torch.int64)
-        masks = masks[..., : prepadded_size[0], : prepadded_size[1]]  # type: ignore
+        row_indices = torch.arange(prepadded_size[0])
+        col_indices = torch.arange(prepadded_size[1])
+        masks = torch.index_select(masks, dim=2, index=row_indices)
+        masks = torch.index_select(masks, dim=3, index=col_indices)
 
         orig_im_size = orig_im_size.to(torch.int64)
         h, w = orig_im_size[0], orig_im_size[1]
@@ -90,7 +92,7 @@ class SamOnnxModel(nn.Module):
         return masks
 
     def select_masks(
-        self, masks: torch.Tensor, iou_preds: torch.Tensor, num_points: int
+        self, masks: torch.Tensor, iou_preds: torch.Tensor, num_points: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # Determine if we should return the multiclick mask or not from the number of points.
         # The reweighting is used to avoid control flow.
@@ -130,7 +132,8 @@ class SamOnnxModel(nn.Module):
             )
 
         if self.return_single_mask:
-            masks, scores = self.select_masks(masks, scores, point_coords.shape[1])
+            num_points = point_coords.size(1)
+            masks, scores = self.select_masks(masks, scores, num_points)
 
         upscaled_masks = self.mask_postprocessing(masks, orig_im_size)
 

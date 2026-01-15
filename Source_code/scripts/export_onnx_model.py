@@ -137,7 +137,6 @@ def run_export(
     }
 
     _ = onnx_model(**dummy_inputs)
-
     output_names = ["masks", "iou_predictions", "low_res_masks"]
 
     with warnings.catch_warnings():
@@ -156,6 +155,7 @@ def run_export(
                 input_names=list(dummy_inputs.keys()),
                 output_names=output_names,
                 dynamic_axes=dynamic_axes,
+                dynamo=False,
             )
 
     if onnxruntime_exists:
