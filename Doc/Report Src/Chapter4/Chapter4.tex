@@ -45,7 +45,7 @@ The SAM mask decoder must be exported to the ONNX format to optimize inference p
 Since the Vision Transformer (ViT) image encoder is computationally expensive, the web demo does not run it locally in the browser. Instead, users must pre-calculate the high-dimensional image embeddings for each target image. This extraction is performed using the utilities provided in \texttt{Source\_code/notebooks/onnx\_model\_example.ipynb}.
 
 \subsubsection{Deployment to Web Frontend}
-For the static web application to function, the generated outputs must be manually integrated into the frontend assets. Users must copy the exported ONNX model (\texttt{.onnx}) and the pre-computed image embeddings (\texttt{.npy}) into the \texttt{demo} subfolder. This architecture allows the web app to perform a simple "lookup" of image features, enabling the SAM mask decoder to generate segments in response to user clicks with millisecond latency.
+For the static web application to function, the generated outputs must be manually integrated into the frontend assets. Users must copy the exported ONNX model (\texttt{.onnx}) into \texttt{Source\_code/demo/model} and the pre-computed image embeddings (\texttt{.npy}) into \texttt{Source\_code/demo/src/assets/data}. This architecture allows the web app to perform a simple "lookup" of image features, enabling the SAM mask decoder to generate segments in response to user clicks with millisecond latency.
 
 \section{Model Architecture}
 The Segment Anything Model (SAM) inference pipeline consists of three primary stages: image encoding, prompt encoding, and mask decoding. This section details the architectural components implemented in the core codebase.
