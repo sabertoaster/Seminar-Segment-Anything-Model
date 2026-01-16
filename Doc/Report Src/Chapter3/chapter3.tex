@@ -70,7 +70,7 @@ The core insight is deceptively simple: \textbf{systematically prompt the model 
     \item \textbf{Grid resolution:} $32 \times 32 = 1024$ grid points per image.
     \item Each point is passed as a prompt to the Prompt Encoder.
     \item For each point, SAM predicts \textbf{three masks simultaneously} (owing to its ambiguity-aware design).
-    \item \textbf{Theoretical maximum:} $1024 \text{ points} \times 3 \text{ masks per point} = 3072 \text{ masks per image}$.
+    \item \textbf{Theoretical maximum:} $1024 \text{ points} \times 3 \text{ masks per point} \\= 3072 \text{ masks per image}$.
 \end{itemize}
 
 \textbf{Why This Grounding Works:}
@@ -198,7 +198,10 @@ Each stage's output is not just data; it is a \textbf{training signal} that impr
 SAM's architecture embodies a principle crucial for real-time, interactive segmentation: \textbf{separate the expensive computation from the user-facing latency}.
 
 \[
-\text{Computational Cost} = \text{Image Encoder Cost} + \text{(Prompt Encoder + Mask Decoder Cost)}
+\begin{aligned}
+	\text{Computational Cost} &= \text{Image Encoder Cost} \\
+	&\quad + \text{(Prompt Encoder + Mask Decoder Cost)}
+\end{aligned}
 \]
 
 \textbf{Key Design:}

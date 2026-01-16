@@ -4,26 +4,27 @@
 \section{General Background}
 Image segmentation is a fundamental task in computer vision that involves partitioning a digital image into multiple segments or sets of pixels, often corresponding to different objects or parts of objects. The goal is to simplify or change the representation of an image into something that is more meaningful and easier to analyze. The history of this field can be broadly divided into three distinct eras.
 
-\textbf{The Pre-Deep Learning Era (c. 1970s--2000s):} Before the widespread adoption of deep learning, segmentation methods were primarily based on handcrafted features and mathematical models. These techniques required significant domain knowledge and focused on pixel-level properties such as intensity, color, texture, and edges. Prominent methods from this period include:
+\textbf{The Pre-Deep Learning Era: Seed-Based and Energy Models}
+Before the rise of neural networks, interactive segmentation relied on mathematical frameworks where user inputs acted as "seeds" or constraints for optimization algorithms. These methods focused on low-level features like color gradients and pixel connectivity:
 \begin{itemize}
-	\item \textbf{Canny Edge Detection:} Proposed by John Canny in 1986, this method became a standard for detecting a wide range of edges in images through a multi-stage algorithm \cite{canny1986computational}.
-	\item \textbf{Active Contour Models (Snakes):} Introduced by Kass et al. in 1988, these deformable models were particularly effective for segmenting objects with irregular shapes, finding extensive use in medical imaging \cite{kass1988snakes}.
-	\item \textbf{K-Means Clustering:} This unsupervised algorithm, formalized by MacQueen in 1967, partitions pixels into clusters based on feature similarity, serving as a foundational clustering-based segmentation technique \cite{macqueen1967some}.
-\end{itemize}
-These methods, while foundational, relied on heuristics and low-level features, often struggling with complex scenes and semantic understanding.
-
-\textbf{The Deep Learning Era (c. 2010s):} The advent of deep learning, particularly Convolutional Neural Networks (CNNs), revolutionized image segmentation. These models could automatically learn hierarchical features from data, eliminating the need for manual feature engineering. Key milestones include:
-\begin{itemize}
-	\item \textbf{Fully Convolutional Networks (FCN):} Long et al. (2015) introduced FCNs, which replaced fully connected layers in CNNs with convolutional layers, enabling end-to-end training for dense, pixel-wise prediction. The use of skip connections allowed the combination of deep, semantic features with shallow, appearance features \cite{long2015fully}.
-	\item \textbf{U-Net:} Proposed by Ronneberger et al. (2015), U-Net features a symmetric encoder-decoder architecture with extensive skip connections. This design proved highly effective for biomedical image segmentation, achieving remarkable performance with very few training images \cite{ronneberger2015u}.
-	\item \textbf{Mask R-CNN:} He et al. (2017) extended the Faster R-CNN object detection framework by adding a parallel branch for predicting segmentation masks. Mask R-CNN became a dominant framework for instance segmentation and a versatile backbone for many downstream tasks \cite{he2017mask}.
+	\item \textbf{Region Growing:} One of the simplest forms of prompt-based segmentation, where a user defines "seed points." The algorithm iteratively clusters neighboring pixels with similar intensity values to the seed, effectively expanding the selection until a boundary is reached \cite{region_growing_2014}.
+	\item \textbf{Watershed Transformation:} This method treats an image like a topographic surface. By placing "markers" (prompts) in specific regions, the algorithm simulates flooding from these points, with the boundaries forming where different "water sources" meet \cite{watershed_1979}.
+	\item \textbf{Active Contour Models (Snakes):} Introduced by Kass et al. (1988), these are energy-minimizing splines influenced by image forces. A user provides an initial rough contour (a visual prompt), which then "shrinks" or "expands" to fit the edges of the target object \cite{snakes_1988}.
+	\item \textbf{GrabCut:} A landmark in interactive segmentation, GrabCut uses a bounding box prompt to initialize a Gaussian Mixture Model. It employs Graph Cuts to iteratively estimate the foreground and background, allowing users to further refine the result with brush strokes \cite{grab_cut_2004}.
 \end{itemize}
 
-\textbf{Modern Research Directions:} Current research continues to build upon these deep learning foundations, exploring new architectures and learning paradigms for greater accuracy, efficiency, and generalization.
+\textbf{The Deep Learning Era: From Weak Supervision to Interaction}
+The integration of Convolutional Neural Networks (CNNs) allowed models to learn semantic context, making visual prompts significantly more powerful and robust to noise.
 \begin{itemize}
-	\item \textbf{Transformer-Based Architectures:} Vision Transformers (ViTs) and self-attention mechanisms have been adapted for segmentation, leading to models like TransUNet (2021) that combine the strengths of Transformers and U-Net \cite{chen2021transunet}.
-	\item \textbf{Foundation Models:} A recent paradigm shift involves building large-scale, pre-trained models that can be adapted to various tasks with minimal fine-tuning. The Segment Anything Model (SAM) from Meta AI (2023) exemplifies this, offering prompt-based, zero-shot segmentation for images \cite{kirillov2023segment}. Its successor, SAM 2 (2024), extends these capabilities to video \cite{ravi2024sam}.
-	\item \textbf{Self-Supervised Learning:} Techniques like contrastive learning (e.g., SimCLR) are being explored to reduce reliance on large labeled datasets, enabling models to learn powerful representations from unlabeled data.
+	\item \textbf{BoxSup and ScribbleSup:} These methods explored using "weak" visual prompts—bounding boxes and scribbles, respectively—as supervision signals. Instead of requiring exhaustive pixel-wise labels for training, these models learned to generate dense masks from simple user-provided annotations \cite{box_sup_2015, scribble_sup_2016}.
+	\item \textbf{Deep Extreme Cut (DEXTR):} DEXTR shifted the focus to efficient interaction by requiring only four "extreme points" (top, bottom, left-most, and right-most pixels) of an object. This demonstrated that minimal, precise visual prompts could outperform complex manual segmentation \cite{deep_extreme_cut_2018}.
+	\item \textbf{FocalClick:} As interactive segmentation moved toward real-time applications, FocalClick introduced a multi-path design that allows for efficient local refinement. When a user clicks to correct a mask, the model "fuses" the new information locally, significantly reducing the computational overhead of interactive editing \cite{focal_click_2022}.
+\end{itemize}
+
+\textbf{The Era of Foundation Models: Segment Anything}
+The current state-of-the-art is defined by the shift toward "Foundation Models"—large-scale architectures trained on massive datasets that exhibit zero-shot generalization to unseen objects and domains.
+\begin{itemize}
+	\item \textbf{Segment Anything Model (SAM):} Developed by Meta AI (2023), SAM introduced the "Promptable Segmentation Task." It is designed to return a valid segmentation mask given any prompt, such as points, bounding boxes, or even text. Trained on the SA-1B dataset of over 1.1 billion masks, SAM can segment any object in any image without prior training on that specific category \cite{kirillov2023segment}.
 \end{itemize}
 
 \section{Motivation}
