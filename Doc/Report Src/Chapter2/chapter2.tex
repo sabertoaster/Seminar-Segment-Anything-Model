@@ -2,456 +2,196 @@
 \label{Chapter2}
 % Table 1: Papers, Mechanics, and Methodology
 \section{Traditional Methods}
-\subsection{K-Means Clustering}
-	K-Means is an unsupervised clustering algorithm used to segment regions of interest from the background \cite{nameirakpam2015kmeanssubtractive}. It was first introduced by Hartigan in 1975, and its goal is to partition $M$ points in an $N$-dimensional space into $K$ clusters such that the within-cluster sum of squares is minimized \cite{hartigan1979kmeans}.
-	
-	\begin{enumerate}
-		\item \textbf{Mechanics:} 
-			The algorithm iteratively assigns each pixel to the nearest cluster centroid and updates centroids based on current assignments. K-Means algorithm seeks a local optimum rather than a global one. Data points are divided into groups by assigning each of them to the nearest centroid. The goal is to find a solution such that moving any point from one cluster to another does not reduce the within-cluster sum of squares \cite{hartigan1979kmeans}.
-						
-		\item \textbf{Methodology:}
-			Let $p_(x,y)$ be a pixel at position $(x, y)$ to be cluster and $c_k$ be the centroid of cluster $k$.
-			Let $C_k$ be the set of pixels assigned to cluster $k$, where $(x, y)$ indexes the image pixels and $k \in \{1, 2, \ldots, K\}$.
-			
-			For each pixel, compute its distances to all cluster centroids:
-			\[
-	    	D_{x,y} = \{\, \| p_{x,y} - c_k \| \mid k \in \{1, 2, \ldots, K\} \}
-			\]
-			
-	    	Assign the pixel to the cluster with the smallest distance:
-			\begin{gather*}
-				n = \operatorname*{arg\,min}_k \| p_{x,y} - c_k \|, \\
-				C_n = C_n \cup \{p_{x,y}\}
-			\end{gather*}
-			
-			After all pixels are assigned, update each centroid as the mean of the pixels belonging to it:
-			\[
-			c_k = \frac{1}{|C_k|} \sum_{p_{x,y} \in C_k} p_{x,y}
-			\]
-			Repeat the assignment and update steps until the centroids no longer change significantly or a maximum number of iterations is reached.
-			
-		\item \textbf{Input:} 
-			An image represented by $M$ pixels, each with $N$ features (e.g., RGB color components or combined color–spatial features), forming an $M \times N$ matrix. The algorithm also takes $K$ initial cluster centroids in the same $N$-dimensional feature space.
-		
-		\item \textbf{Output:} 
-		\begin{itemize}
-			\item A label map of size $M \times 1$ indicating the cluster each pixel belongs to.  
-			\item A vector of size $K \times 1$ containing the number of pixels in each cluster.  
-			\item A $K \times N$ matrix of the final cluster centroids.  
-		\end{itemize}
-		
-			
-		\item \textbf{Algorithm:}
-		\begin{lstlisting}
-			1. Initialize cluster centroids
-			2. For each pixel (x, y):
-				Compute its distance to all centroids
-				Assign it to the cluster with the smallest distance
-			3. For each cluster:
-				Recalculate the centroid as the mean of all pixels assigned to it
-			4. Repeat steps 2 and 3 until convergence
-		\end{lstlisting}
-	\end{enumerate}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|p{12cm}|}
+		\hline
+		{\textbf{Paper}} & {\textbf{Mechanics}} \\ \hline
+		Watershed &
+		Flooding process on gradient topography with controlled basins \\ \hline
+		Active Contour &
+		Energy minimizing curve driven by internal smoothness and image forces \\ \hline
+		GrabCut &
+		Probabilistic graph cut with iterative foreground background modeling \\ \hline
+		Region growing &
+		Local similarity expansion based on pixel intensity or color distance \\ \hline
+		BoxSup           & Weakly supervised semantic segmentation using bounding boxes and iterative region proposal refinement                 \\ \hline
+		ScribbleSup      & Weak supervision via sparse scribble annotations propagated using graphical models \\ \hline
+		Deep Extreme Cut & CNN predicts object mask from extreme point prompts                                \\ \hline
+		Segment Anything & Uses a large image encoder based on Vision Transformers and a lightweight prompt encoder for points, boxes, or masks \\ \hline
+	\end{tabular}
+\end{table}
 
-\subsection{Mean Shift Clustering}
-	Mean Shift is a non-parametric clustering algorithm, which falls into unsupervised clustering category. Unlike K-Means, it does not require specifying the number of clusters in advance. Instead, it locates regions of high data density (modes) by iteratively shifting data points toward the nearest local maximum of a kernel density estimate \cite{comaniciu2002mean}.
-	
-	\begin{enumerate}
-		\item \textbf{Mechanics:}  
-		The algorithm treats data points as samples from an underlying probability density function and seeks its local maxima. Each pixel is iteratively moved toward regions of higher density, determined by a kernel function, until convergence. Pixels converging to the same mode belong to the same cluster.
-		
-		\item \textbf{Methodology:}  
-		Let $p_{x,y}$ denote the feature vector of the pixel at position $(x, y)$. The goal is to move $p_{x,y}$ iteratively toward the local density maximum according to:
-		\[
-		m(p_{x,y}) = \frac{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)p_j}{\sum\limits_{p_j \in S} K\!\left(\frac{\|p_j - p_{x,y}\|^2}{h^2}\right)}
-		\]
-		where:
-		\begin{itemize}
-			\item $S$ is the set of all data points (pixels),
-			\item $K(\cdot)$ is a kernel function (commonly a Gaussian kernel),
-			\item $h$ is the bandwidth controlling the kernel width.
-		\end{itemize}
-		
-		The mean shift vector is defined as:
-		\[
-		\Delta p_{x,y} = m(p_{x,y}) - p_{x,y}
-		\]
-		and the pixel is updated iteratively:
-		\[
-		p_{x,y}^{(t+1)} = p_{x,y}^{(t)} + \Delta p_{x,y}
-		\]
-		until convergence.
-		After convergence, all pixels that converge to the same mode are assigned to the same cluster.
-		
-		\item \textbf{Input:}  
-			An image represented by $M$ pixels, each having an $N$-dimensional feature vector.  
-			The algorithm also requires a kernel bandwidth parameter $h$ that defines the size of the neighborhood considered for density estimation.
-		
-		\item \textbf{Output:}  
-		\begin{itemize}
-			\item A segmented image in which each cluster corresponds to a region of similar features.  
-			\item The set of mode locations that represent cluster centers.  
-		\end{itemize}
-		
-		\item \textbf{Algorithm:}
-		\begin{lstlisting}[mathescape=true]
-			1. For each pixel (x, y):
-				Initialize $p_{x,y}$ with its feature vector
-			2. Repeat until convergence:
-				a. Compute the mean shift vector $\Delta p_{x,y}$
-				using nearby pixels within bandwidth h
-				b. Update $p_{x,y} = p_{x,y} + \Delta p_(x,y)$
-			3. After convergence, group pixels whose final positions fall within the same mode region
-			4. Assign each group as one cluster
-		\end{lstlisting}
-	\end{enumerate}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{3cm}|p{4cm}|p{4cm}|p{4cm}|}
+		\hline
+		\multirow{2}{*}{\textbf{Paper}} &
+		\multicolumn{3}{|c|}{\textbf{Methodology}} \\
+		\cline{2-4}
+		&
+		\textbf{Input} &
+		\textbf{Optimization} &
+		\textbf{Final Labeling} \\ \hline
+		Watershed &
+		Image gradient, foreground and background markers &
+		Flooding until basins meet &
+		Watershed lines form region boundaries \\ \hline
+		Active Contour &
+		Image as continuous energy field, initial contour &
+		Iterative energy minimization via curve evolution &
+		Final curve represents object boundary \\ \hline
+		GrabCut &
+		Image as graph with color distributions (GMMs), bounding box &
+		Repeated min cut optimization with model updates &
+		Cut defines segmentation boundary \\ \hline
+		Region growing &
+		Image as pixel grid with feature vectors, seed pixels &
+		Iterative neighbor expansion &
+		Region boundary from grown region \\ \hline
+		BoxSup &
+		CNN feature maps extracted from region proposals and full images &
+		Bounding boxes converted into soft foreground background supervision using objectness and low level segmentation cues &
+		CNN trained on pseudo masks predicts dense semantic segmentation masks \\ \hline
+		ScribbleSup &
+		CNN feature maps over full image &
+		Scribbles transformed into dense label maps via graph based or CRF propagation &
+		CNN outputs semantic masks learned from propagated pseudo labels \\ \hline
+		Deep Extreme Cut &
+		CNN encodes image appearance along with spatial context &
+		Extreme points encoded as distance maps concatenated with image channels &
+		Single pass CNN inference produces object mask \\ \hline
+		Segment Anything &
+		Vision transformer generates dense image embeddings &
+		Prompts encoded into tokens representing points, boxes, or masks &
+		Transformer based mask decoder predicts multiple candidate masks with confidence scores \\ \hline
+	\end{tabular}
+\end{table}
 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|p{3cm}|p{6cm}|p{6cm}|}
+		\hline
+		\textbf{Paper} & \textbf{Contribution} & \textbf{Limitation} \\ \hline
+		Watershed &
+		Introduced topographic interpretation of images and marker controlled segmentation to reduce over segmentation &
+		Sensitive to noise and gradient quality \\ \hline
+		Active Contour &
+		Formalized segmentation as energy minimization over curves and influenced decades of variational methods &
+		Struggles with concave boundaries and weak edges \\ \hline
+		GrabCut &
+		Demonstrated practical interactive segmentation with probabilistic modeling &
+		Assumes color separability between foreground and background; fails when distributions overlap \\ \hline
+		Region growing &
+		Established seed based interactive segmentation &
+		Highly sensitive to noise and intensity variation, leakage occurs at weak boundaries \\ \hline
+		BoxSup & Leverages bounding boxes, which are approximately 15 times faster to collect than pixel-level masks & Bounding box contains no information about the specific shape of the object, causing "boundary error"-misalignment at the pixel level \\ \hline
+		ScribbleSup & Scribbles are highly effective for annotating "stuff" categories that have no well-defined shape or boundary & The model is sensitive to the length and location of the scribbles \\ \hline
+		Deep Extreme Cut & By using four points, DEXTR provides far more geometric information than a bounding box while remaining faster to annotate & Still struggles to capture extremely thin or "tiny" structures where the pixel area is minimal \\ \hline
+		Segment Anything & Can handle ambiguous prompts by predicting multiple valid masks simultaneously, rather than averaging them into a single blurry result & The image encoder is a heavyweight Vision Transformer. Generating the initial image embedding is not yet "real-time" on lower-end devices \\ \hline
+	\end{tabular}
+\end{table}
 
-\subsection{Binary Thresholding}
-Binary thresholding is used to separate the foreground (region of interest) from the background based on pixel intensity values. It is particularly effective when the objects and background have distinct intensity distributions.
+\subsection{Watershed Transformation}
+The Watershed transformation is a morphological segmentation tool based on a topographic analogy. It treats the gradient of an image as a relief surface where high intensities represent mountain ridges and low intensities represent valleys \cite{watershed_1979}.
 
 \begin{enumerate}
-	\item \textbf{Mechanics:} Each pixel in the grayscale image is compared against a threshold value $T$. Pixels with intensity greater than or equal to $T$ are classified as foreground, while the others are classified as background. This process converts a grayscale image into a binary one.
+	\item \textbf{Mechanics:} 
+	The algorithm simulates the immersion of the topographic surface in water. Holes are pierced at local minima (or user markers), and as the surface is submerged, catchment basins fill up. At points where water from different basins would meet, "watershed lines" (dams) are constructed to partition the image.
 	
-	\item \textbf{Methodology:}
-	For each pixel $(x, y)$ in the image:
-	\begin{enumerate}
-		\item Compare $I(x, y)$ with the threshold value $T$.
-		\item Assign the binary value based on the comparison rule.
-	\end{enumerate}
-	$T$ can be predefined or determined adaptively using methods such as Otsu’s algorithm, which selects the threshold that minimizes the intra-class variance between the foreground and background.
+	\item \textbf{Input:} 
+	A grayscale image (typically the gradient magnitude) and a set of visual prompts (markers/points) identifying the foreground and background regions.
 	
-	\item \textbf{Input:} A grayscale image, where $(x, y)$ denotes the pixel coordinates, $I(x, y) \in [0, 255]$ represents its intensity, a threshold value $T$ to determine the output pixel at $(x, y)$.
-	
-	\item \textbf{Output:} A binary image $B$, where
-	\[
-	B(x, y) = 
-	\begin{cases} 
-		1, & \text{if } I(x, y) \ge T, \\
-		0, & \text{otherwise.}
-	\end{cases}
-	\]
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		For each pixel (x, y):
-		If I(x, y) >= T:
-			B(x, y) = 1
-		Else:
-			B(x, y) = 0
-	\end{lstlisting}
+	\item \textbf{Output:} 
+	A label map where each pixel is assigned to a specific marker's region, separated by one-pixel wide watershed lines.
 \end{enumerate}
 
+\subsection{Active Contour Models (Snakes)}
+Active Contour Models, or "Snakes," are energy-minimizing splines that "slither" toward salient image features like edges and lines under the influence of internal and external forces. Snakes rely on a visual prompt—usually a rough initial contour drawn near the object of interest. The model then uses optimization to "shrink-wrap" itself onto the target's boundary \cite{snakes_1988}.
+
+\begin{enumerate}
+	\item \textbf{Mechanics:} 
+	The snake's behavior is governed by an energy functional consisting of internal spline energy (maintaining smoothness and continuity) and external image energy (attracting the snake to edges). The goal is to find a contour position that minimizes the total Gibbs energy.
+	
+	\item \textbf{Input:} 
+	The digital image and an initial set of points forming a rough contour (the visual prompt).
+	
+	\item \textbf{Output:} 
+	A set of coordinates representing a smooth, optimized boundary that fits the object's edges.
+\end{enumerate}
+
+
+\subsection{GrabCut}
+GrabCut is an interactive segmentation framework that extends Graph Cuts by using Gaussian Mixture Models (GMMs) and an iterative estimation procedure to extract foreground objects with minimal user effort. The primary visual prompt for GrabCut is a bounding box. The user drags a rectangle around the desired object; the area outside the box is marked as definite background, while the area inside is considered "unknown" and segmented automatically \cite{grab_cut_2004}.
+
+\begin{enumerate}
+	\item \textbf{Mechanics:} 
+	The algorithm models the foreground and background color distributions using GMMs. It then constructs a Markov Random Field (MRF) where an energy function—balancing color similarity and spatial coherence—is minimized using a min-cut/max-flow algorithm.
+	
+	\item \textbf{Input:} 
+	An RGB image and a bounding box (rectangle) prompt. Optional "brush strokes" can be added for refinement.
+	
+	\item \textbf{Output:} 
+	A binary mask (foreground vs. background) and an alpha-matte for the object boundary.
+\end{enumerate}
+
+\subsection{Seeded Region Growing (SRG)}
+Seeded Region Growing (SRG) is a pixel-level segmentation technique that partitions an image into regions based on the similarity of pixels to initial "seed" points. SRG is highly dependent on visual prompts. A user specifies one or more seed points for each region of interest. The algorithm then "grows" these regions by absorbing neighboring pixels that meet a similarity criterion \cite{region_growing_2014}.
+
+\begin{enumerate}
+	\item \textbf{Mechanics:} 
+	The algorithm maintains a set of unallocated pixels that are neighbors to at least one grown region. At each step, the pixel with the smallest "distance" (highest similarity) to its adjacent region is added, and its neighbors are updated in the candidate list.
+	
+	\item \textbf{Output:} 
+	A fully partitioned label map where each pixel is assigned to a region corresponding to one of the initial seeds.
+\end{enumerate}
 
 
 \section{Modern Methods}
 
-\subsection{Fully Convolutional Networks (FCNs)}
-Fully Convolutional Networks, introduced by Long et al. in 2015, revolutionized semantic segmentation by adapting classification networks for dense prediction tasks \cite{long2015fcn}. FCN replaced fully connected layers with convolutional layers, enabling end-to-end learning for pixel-wise segmentation.
+\subsection{BoxSup}
+BoxSup is a weakly-supervised framework designed to train semantic segmentation networks using bounding box annotations instead of expensive pixel-level masks \cite{box_sup_2015}.
 
 \begin{enumerate}
-	\item \textbf{Mechanics:}
-	FCN transforms classification networks (e.g., VGG, ResNet) into fully convolutional architectures by replacing dense layers with $1 \times 1$ convolutions. The network produces coarse feature maps through successive pooling, then upsamples them back to the original image resolution using transposed convolutions (deconvolution). Skip connections combine deep semantic features with shallow appearance features to recover spatial details lost during downsampling.
+	\item \textbf{Mechanics:} The method employs an iterative learning scheme. It uses unsupervised region proposal algorithms to generate candidate masks and then selects the most likely mask for each object based on the bounding box constraints and current network feedback.
+
+	\item \textbf{Input:} Training images with bounding box annotations.
 	
-	\item \textbf{Methodology:}
-	Let $I \in \mathbb{R}^{H \times W \times 3}$ be the input image and $f_\theta$ represent the convolutional encoder producing feature maps at multiple scales.
-	
-	The encoder generates hierarchical features:
-	\[
-	F_i = f_{\theta_i}(F_{i-1}), \quad F_0 = I
-	\]
-	where $F_i$ represents features at stage $i$ with progressively reduced spatial dimensions.
-	
-	Upsampling is performed via transposed convolutions $g_\phi$:
-	\[
-	U_i = g_{\phi_i}(U_{i-1})
-	\]
-	
-	Skip connections fuse features from encoder and decoder:
-	\[
-	U_i = U_i + W_i \odot F_i
-	\]
-	where $W_i$ are learned weights and $\odot$ denotes element-wise multiplication.
-	
-	The final prediction is obtained through a $1 \times 1$ convolution:
-	\[
-	P = \text{softmax}(W_{\text{out}} * U_{\text{final}})
-	\]
-	
-	\item \textbf{Input:}
-	An RGB image of arbitrary size $H \times W \times 3$.
-	
-	\item \textbf{Output:}
-	A probability map of size $H \times W \times C$, where $C$ is the number of semantic classes. Each pixel is assigned to the class with highest probability.
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Pass image through convolutional encoder
-		2. Store feature maps at multiple scales
-		3. Upsample coarse feature maps via transposed convolutions
-		4. Add skip connections from encoder to decoder
-		5. Apply 1x1 convolution for class prediction
-		6. Output per-pixel class probabilities
-	\end{lstlisting}
+	\item \textbf{Output:} A trained Fully Convolutional Network (FCN) capable of producing dense semantic segmentation masks.
 \end{enumerate}
 
-\subsection{U-Net}
-U-Net, proposed by Ronneberger et al. in 2015, features a symmetric encoder-decoder architecture with extensive skip connections \cite{ronneberger2015unet}. Originally designed for biomedical image segmentation, U-Net achieves high accuracy even with limited training data.
+\subsection{ScribbleSup}
+ScribbleSup is a weakly-supervised approach that uses sparse scribbles to supervise the training of deep networks for semantic segmentation \cite{scribble_sup_2016}.
 
 \begin{enumerate}
-	\item \textbf{Mechanics:}
-	U-Net consists of a contracting path (encoder) that captures context and an expansive path (decoder) that enables precise localization. The encoder applies repeated $3 \times 3$ convolutions and $2 \times 2$ max pooling for downsampling. The decoder uses $2 \times 2$ transposed convolutions for upsampling, concatenated with correspondingly cropped features from the encoder via skip connections. This architecture allows the network to propagate context information to higher resolution layers.
+	\item \textbf{Mechanics:} The system uses a graphical model (CRF) built on super-pixels to propagate label information from the scribbles to the unknown, unmarked pixels. This propagation is guided by spatial constraints, appearance, and the network’s own semantic predictions.
 	
-	\item \textbf{Methodology:}
-	The encoder path consists of repeated application of convolution blocks:
-	\[
-	F^{\text{enc}}_i = \text{ReLU}(\text{BN}(W^{\text{enc}}_i * F^{\text{enc}}_{i-1}))
-	\]
-	followed by max pooling for downsampling.
+	\item \textbf{Input:} RGB images and sparse scribble annotations (class-specific strokes).
 	
-	The decoder path upsamples and concatenates:
-	\[
-	F^{\text{dec}}_i = [U_i, \text{crop}(F^{\text{enc}}_{N-i})]
-	\]
-	where $[,]$ denotes channel-wise concatenation, $U_i$ is the upsampled feature map, and $\text{crop}$ ensures spatial alignment.
-	
-	Each concatenated feature undergoes convolution:
-	\[
-	F^{\text{dec}}_i = \text{ReLU}(\text{BN}(W^{\text{dec}}_i * F^{\text{dec}}_i))
-	\]
-	
-	The final segmentation map is generated by:
-	\[
-	M = \sigma(W_{\text{final}} * F^{\text{dec}}_{\text{final}})
-	\]
-	where $\sigma$ is the sigmoid (for binary) or softmax (for multi-class) activation.
-	
-	\item \textbf{Input:}
-	An image of size $H \times W \times C$ (typically grayscale or RGB).
-	
-	\item \textbf{Output:}
-	A segmentation mask of size $H \times W \times K$, where $K$ is the number of classes.
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Encoder: Apply convolutions and max pooling to downsample
-		2. Bottleneck: Process lowest resolution features
-		3. Decoder: Upsample via transposed convolutions
-		4. Concatenate encoder features via skip connections
-		5. Apply convolutions on concatenated features
-		6. Generate final segmentation mask
-	\end{lstlisting}
+	\item \textbf{Output:} A dense semantic label map for the entire image and a trained FCN model.
 \end{enumerate}
 
-\subsection{Mask R-CNN}
-Mask R-CNN, introduced by He et al. in 2017, extends Faster R-CNN for instance segmentation by adding a parallel branch for predicting segmentation masks \cite{he2017mask}. This architecture excels at detecting and segmenting individual object instances.
+\subsection{Deep Extreme Cut (DEXTR)}
+Deep Extreme Cut (DEXTR) is an interactive segmentation method that converts four extreme points provided by a user into a precise object mask \cite{deep_extreme_cut_2018}.
 
 \begin{enumerate}
-	\item \textbf{Mechanics:}
-	Mask R-CNN operates in two stages. First, a Region Proposal Network (RPN) generates candidate object bounding boxes. Second, for each region of interest (RoI), the network performs three parallel tasks: class prediction, bounding box regression, and mask prediction. The key innovation is RoIAlign, which preserves spatial alignment during RoI pooling by using bilinear interpolation, crucial for pixel-accurate mask prediction.
+	\item \textbf{Mechanics:} The four extreme points are encoded as a 2D Gaussian heatmap. This heatmap is concatenated with the original RGB image to form a 4-channel input, providing the CNN with an explicit spatial prior for the target object.
 	
-	\item \textbf{Methodology:}
-	Let $I$ be the input image and $f_{\text{backbone}}$ be the feature extractor (e.g., ResNet-FPN).
+	\item \textbf{Input:} An RGB image and four extreme point clicks.
 	
-	Feature extraction:
-	\[
-	F = f_{\text{backbone}}(I)
-	\]
-	
-	RPN generates proposals:
-	\[
-	\{B_i, s_i\}_{i=1}^N = \text{RPN}(F)
-	\]
-	where $B_i$ are bounding boxes and $s_i$ are objectness scores.
-	
-	For each RoI, RoIAlign extracts aligned features:
-	\[
-	F_{\text{RoI}} = \text{RoIAlign}(F, B_i)
-	\]
-	
-	Three parallel heads process $F_{\text{RoI}}$:
-	\begin{align*}
-		p_{\text{cls}} &= \text{softmax}(W_{\text{cls}} \cdot F_{\text{RoI}}) \quad \text{(classification)} \\
-		\Delta B &= W_{\text{box}} \cdot F_{\text{RoI}} \quad \text{(box regression)} \\
-		M &= \sigma(W_{\text{mask}} * F_{\text{RoI}}) \quad \text{(mask prediction)}
-	\end{align*}
-	
-	The loss function combines three terms:
-	\[
-	\mathcal{L} = \mathcal{L}_{\text{cls}} + \mathcal{L}_{\text{box}} + \mathcal{L}_{\text{mask}}
-	\]
-	
-	\item \textbf{Input:}
-	An RGB image of arbitrary size, typically resized to have a maximum dimension of 800-1024 pixels.
-	
-	\item \textbf{Output:}
-	For each detected instance: class label, confidence score, bounding box coordinates $(x, y, w, h)$, and a binary mask of size $28 \times 28$ (upsampled to the original bounding box size).
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Extract multi-scale features via backbone + FPN
-		2. Generate region proposals using RPN
-		3. For each RoI:
-		a. Apply RoIAlign for spatial alignment
-		b. Predict class probabilities
-		c. Refine bounding box coordinates
-		d. Generate instance segmentation mask
-		4. Apply Non-Maximum Suppression (NMS)
-		5. Output final detections with masks
-	\end{lstlisting}
+	\item \textbf{Output:} A precise, high-fidelity binary mask of the segmented object.
 \end{enumerate}
 
-\subsection{DeepLab}
-DeepLab, developed by Chen et al., employs atrous (dilated) convolution and Atrous Spatial Pyramid Pooling (ASPP) to capture multi-scale contextual information without reducing spatial resolution \cite{chen2017deeplab}. DeepLabv3+ further incorporates an encoder-decoder structure.
+\subsection{FocalClick}
+FocalClick is a high-efficiency interactive segmentation framework designed for practical applications, particularly for mask correction and use on low-power devices \cite{focal_click_2022}.
 
 \begin{enumerate}
-	\item \textbf{Mechanics:}
-	DeepLab uses atrous convolution to expand the receptive field without increasing parameters or reducing resolution. The atrous rate $r$ controls the spacing between kernel weights. ASPP applies parallel atrous convolutions with different rates to capture objects at multiple scales. The encoder-decoder structure (in DeepLabv3+) first extracts features, then gradually recovers spatial details through the decoder with skip connections.
+	\item \textbf{Mechanics:} Upon receiving a user click, the model operates on two levels: a "Target Crop" (for coarse global segmentation) and a "Focus Crop" (a higher resolution local patch centered on the new click for fine refinement).
 	
-	\item \textbf{Methodology:}
-	Atrous convolution with rate $r$:
-	\[
-	y[i] = \sum_{k=1}^K x[i + r \cdot k] \cdot w[k]
-	\]
-	where $x$ is the input, $w$ is the filter, and $y$ is the output.
+	\item \textbf{Input:} RGB image, positive/negative clicks, and an optional pre-existing (previous) mask.
 	
-	ASPP applies convolutions at multiple rates:
-	\[
-	F_{\text{ASPP}} = \text{Concat}(f_{r_1}(F), f_{r_2}(F), \ldots, f_{r_n}(F), \text{GAP}(F))
-	\]
-	where $f_{r_i}$ denotes atrous convolution with rate $r_i$ and $\text{GAP}$ is global average pooling.
-	
-	The decoder upsamples low-level features:
-	\[
-	F_{\text{dec}} = \text{Upsample}(F_{\text{ASPP}}) + W_{\text{skip}} * F_{\text{low}}
-	\]
-	
-	Final prediction:
-	\[
-	P = \text{softmax}(W_{\text{out}} * F_{\text{dec}})
-	\]
-	
-	\item \textbf{Input:}
-	An RGB image of size $H \times W \times 3$, typically pre-processed with mean subtraction and normalization.
-	
-	\item \textbf{Output:}
-	A semantic segmentation map of size $H \times W$, where each pixel is assigned a class label from $C$ possible classes.
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Extract features using backbone with atrous convolution
-		2. Apply ASPP with multiple dilation rates
-		3. Concatenate multi-scale features
-		4. Upsample in decoder with skip connections
-		5. Apply 1x1 convolution for class scores
-		6. Generate final segmentation map
-	\end{lstlisting}
+	\item \textbf{Output:} An updated, refined segmentation mask that accurately reflects the new user clicks while maintaining global consistency.
 \end{enumerate}
-
-\subsection{Transformer-Based Segmentation}
-Vision Transformers (ViTs) adapt the self-attention mechanism from NLP to computer vision. TransUNet, introduced by Chen et al. in 2021, combines Transformers with U-Net architecture for medical image segmentation \cite{chen2021transunet}.
-
-\begin{enumerate}
-	\item \textbf{Mechanics:}
-	TransUNet uses a CNN to extract initial features, then patches the feature map and processes it through Transformer encoder layers. The self-attention mechanism captures long-range dependencies between image patches, overcoming the limited receptive field of CNNs. The Transformer output is reshaped and fed into a CNN decoder similar to U-Net, with skip connections from the CNN encoder for recovering spatial details.
-	
-	\item \textbf{Methodology:}
-	The image is first processed by a CNN encoder:
-	\[
-	F_{\text{CNN}} = f_{\text{CNN}}(I)
-	\]
-	
-	Features are divided into patches and flattened:
-	\[
-	z_0 = [\text{Flatten}(F_1), \text{Flatten}(F_2), \ldots, \text{Flatten}(F_N)] + E_{\text{pos}}
-	\]
-	where $E_{\text{pos}}$ are learnable positional embeddings.
-	
-	Multi-head self-attention computes:
-	\[
-	\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
-	\]
-	where $Q = z W_Q$, $K = z W_K$, $V = z W_V$.
-	
-	Transformer layer:
-	\begin{align*}
-		z'_\ell &= \text{MSA}(\text{LN}(z_{\ell-1})) + z_{\ell-1} \\
-		z_\ell &= \text{MLP}(\text{LN}(z'_\ell)) + z'_\ell
-	\end{align*}
-	where MSA is multi-head self-attention, LN is layer normalization, and MLP is a feed-forward network.
-	
-	The decoder upsamples and fuses:
-	\[
-	M = f_{\text{decoder}}(\text{Reshape}(z_L), F_{\text{CNN}})
-	\]
-	
-	\item \textbf{Input:}
-	An image of size $H \times W \times C$, divided into patches of size $P \times P$.
-	
-	\item \textbf{Output:}
-	A segmentation mask of size $H \times W \times K$, where $K$ is the number of semantic classes.
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Extract hierarchical features using CNN encoder
-		2. Divide feature map into patches and flatten
-		3. Add positional embeddings
-		4. Process through Transformer encoder layers
-		5. Reshape Transformer output to spatial dimensions
-		6. Upsample through CNN decoder with skip connections
-		7. Generate final segmentation mask
-	\end{lstlisting}
-\end{enumerate}
-
-\subsection{Recurrent Neural Networks for Segmentation}
-RNNs, particularly Long Short-Term Memory (LSTM) networks, have been applied to image segmentation to model spatial dependencies and context \cite{visin2015rnn}. ReNet and related architectures process images sequentially in horizontal and vertical sweeps.
-
-\begin{enumerate}
-	\item \textbf{Mechanics:}
-	RNN-based segmentation treats the image as a sequence, processing it row-by-row or with overlapping patches. Four RNN layers sweep the image in different directions (left-to-right, right-to-left, top-to-bottom, bottom-to-top) to capture context from all spatial neighbors. The hidden states from all four directions are concatenated to form a rich contextual representation for each pixel. Multiple ReNet layers can be stacked to increase the receptive field.
-	
-	\item \textbf{Methodology:}
-	For a feature map $F \in \mathbb{R}^{H \times W \times C}$, four RNN sweeps compute:
-	\begin{align*}
-		h_{i,j}^{\rightarrow} &= \text{RNN}(F_{i,j}, h_{i,j-1}^{\rightarrow}) \\
-		h_{i,j}^{\leftarrow} &= \text{RNN}(F_{i,j}, h_{i,j+1}^{\leftarrow}) \\
-		h_{i,j}^{\downarrow} &= \text{RNN}(F_{i,j}, h_{i-1,j}^{\downarrow}) \\
-		h_{i,j}^{\uparrow} &= \text{RNN}(F_{i,j}, h_{i+1,j}^{\uparrow})
-	\end{align*}
-	
-	Hidden states are concatenated:
-	\[
-	H_{i,j} = [h_{i,j}^{\rightarrow}, h_{i,j}^{\leftarrow}, h_{i,j}^{\downarrow}, h_{i,j}^{\uparrow}]
-	\]
-	
-	For segmentation, additional layers map to class predictions:
-	\[
-	P_{i,j} = \text{softmax}(W \cdot H_{i,j})
-	\]
-	
-	\item \textbf{Input:}
-	A feature map from a CNN backbone of size $H \times W \times C$, or directly an image if using raw pixels.
-	
-	\item \textbf{Output:}
-	A segmentation map of size $H \times W \times K$, where $K$ is the number of classes.
-	
-	\item \textbf{Algorithm:}
-	\begin{lstlisting}
-		1. Extract features using CNN (if applicable)
-		2. Initialize hidden states for four RNN directions
-		3. For each layer:
-		a. Sweep left-to-right, accumulating context
-		b. Sweep right-to-left, accumulating context
-		c. Sweep top-to-bottom, accumulating context
-		d. Sweep bottom-to-top, accumulating context
-		e. Concatenate directional hidden states
-		4. Apply fully connected layer for class prediction
-		5. Output per-pixel class probabilities
-	\end{lstlisting}
-\end{enumerate}
-
-
-
 
 \bibliographystyle{IEEEtran} % Or IEEEtranN if using natbib
 \bibliography{references}    % Replace 'references' with the name of your .bib file
