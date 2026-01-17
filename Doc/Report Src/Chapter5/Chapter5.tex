@@ -1,8 +1,28 @@
-\chapter{Kết luận và hướng phát triển}
-
+\chapter{Conclusions and Future Work}
 
 \section{Conclusion}
+This report has surveyed the evolution of image segmentation, tracing its trajectory from early mathematical heuristics to the modern era of foundation models. We began by examining traditional methods such as Watershed and Region Growing, which relied on low-level pixel intensity and required significant user intervention to define boundaries. We then explored the transition to deep learning approaches like BoxSup and DEXTR, which introduced semantic understanding but were often limited by the scale of their training data and specific class vocabularies.
+
+The focal point of our analysis, the Segment Anything Model (SAM), represents a paradigm shift in this domain. By leveraging a massive "Data Engine" and a decoupled architecture—separating a heavy image encoder from a lightweight prompt decoder—SAM has demonstrated that zero-shot generalization is achievable on a scale previously thought impossible. Our review of the methodology confirms that the integration of human-in-the-loop annotation (the "flywheel effect") was accurate in solving the data scarcity problem that hindered previous generations of segmentation models.
 
 \section{Discussion}
+
 \subsection{Limitations}
-\subsection{Future Work} %\cite{Makarov2022}
+Despite the remarkable capabilities of foundation models, our analysis in Chapter 3 highlights inherent limitations regarding computational resources. The reliance on a Vision Transformer (specifically ViT-H) for the image encoder creates a significant bottleneck. While the prompt encoder is efficient (operating in milliseconds), the initial image embedding step is computationally expensive, making the current full-scale model unsuitable for real-time applications on edge devices or mobile platforms without hardware acceleration.
+
+ Furthermore, while Chapter 2 highlighted that traditional methods like GrabCut were prone to failure on complex textures, they had the advantage of being lightweight. SAM, conversely, trades computational weight for semantic robustness. Additionally, while the $32 \times 32$ grid prompting strategy allows for automatic mask generation, the model still occasionally struggles with highly ambiguous structures or "camouflaged" objects where the boundary between foreground and background is semantically ill-defined.
+
+\subsection{Future Work}
+Based on the comprehensive survey of current methodologies and the identified limitations, we propose several avenues for future research to enhance segmentation with visual cues:
+
+\textbf{1. Lightweight Architectures for Edge Computing:}
+A critical next step is the development of "distilled" or quantized versions of the image encoder. Future work should investigate techniques to approximate the performance of ViT-H using smaller backbones (e.g., MobileViT) to enable high-fidelity, promptable segmentation directly on smartphones and IoT devices.
+
+\textbf{2. Multi-Modal Prompt Fusion:}
+Currently, visual cues (points, boxes) and textual prompts operate somewhat independently. Future systems could improve disambiguation by fusing these modalities more tightly. For instance, a user could click on a car and say "the wheel," and the model should use the text to select the specific sub-part mask immediately, rather than relying on the user to select from the three predicted levels of granularity.
+
+\textbf{3. Temporal Consistency for Video Segmentation:}
+Extending the "promptable" paradigm to the temporal dimension is a logical progression. Future research should focus on propagating visual cues across video frames. A single click on an object in the first frame should suffice to track and segment that object throughout a sequence, handling occlusions and deformation without requiring frame-by-frame re-prompting.
+
+\textbf{4. Domain-Specific Adaptation:}
+While SAM is a generalist, it may underperform in specialized domains like medical imaging or satellite remote sensing compared to models trained specifically on those modalities. Future work should explore efficient fine-tuning methods (such as Low-Rank Adaptation or Adapters) that allow the foundation model to adapt to these specific visual cues without the prohibitive cost of full retraining.
