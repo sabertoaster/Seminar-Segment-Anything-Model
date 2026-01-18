@@ -162,7 +162,7 @@ To further improve small object segmentation (which is notoriously challenging),
 
 \textbf{The Zooming Strategy:}
 \begin{itemize}
-    \item Original image is processed at full resolution (1500 pixels shortest side after downsampling).
+    \item Original image is processed at full resolution (1024 pixels shortest side after downsampling).
     \item Additionally, crop and zoom into regions systematically (e.g., $2\times, 4\times$ magnification).
     \item The $32 \times 32$ grid prompting is re-applied to these zoomed crops.
     \item Additional fine-grained masks are generated for small objects that might be missed in the full-resolution pass.
@@ -287,7 +287,7 @@ Standard supervised pre-training on ImageNet biases the encoder toward \textbf{s
 
 \subsubsection{High-Resolution Input Handling}
 
-Standard ViT processes images at fixed resolution (e.g., $224 \times 224$), but SAM's images are high-resolution (1500 pixels shortest side). SAM uses a modified ViT-H that:
+Standard ViT processes images at fixed resolution (e.g., $224 \times 224$), but SAM's images are high-resolution (1024 pixels shortest side). SAM uses a modified ViT-H that:
 
 \begin{enumerate}
     \item Maintains the $16 \times 16$ patch size (empirically optimal for detail preservation).
@@ -295,7 +295,7 @@ Standard ViT processes images at fixed resolution (e.g., $224 \times 224$), but 
     \item Uses sliding-window attention in some variants to reduce quadratic attention complexity, though this is not explicitly detailed in the paper.
 \end{enumerate}
 
-\textbf{Output:} For a $1500 \times 1500$ image with $16 \times 16$ patches, the image embedding has shape $(256 \times 256, 1280)$—a $256 \times 256$ spatial grid of 1280-dimensional feature vectors.
+\textbf{Output:} For a $1024 \times 1024$ image with $16 \times 16$ patches, the image embedding has shape $(64 \times 64, 768)$—a $64 \times 64$ spatial grid of 768-dimensional feature vectors. After transformer block and 2 layers of convolution, the final embedding has shape $(64 \times 64, 256)$.
 
 \subsection{Prompt Encoder: Mapping Prompts to Embedding Space}
 
@@ -336,7 +336,7 @@ When a user provides a mask as a prompt (e.g., a rough sketch or previous predic
 
 \textbf{Representation:}
 \begin{enumerate}
-    \item Resize the input mask to match the spatial resolution of the Image Embedding (e.g., $256 \times 256$ if image is $1500 \times 1500$).
+    \item Resize the input mask to match the spatial resolution of the Image Embedding (e.g., $256 \times 256$ if image is $1024 \times 1024$).
     \item Apply \textbf{2D convolutions} to extract spatial features:
     \begin{itemize}
         \item Input: Binary mask (single channel).

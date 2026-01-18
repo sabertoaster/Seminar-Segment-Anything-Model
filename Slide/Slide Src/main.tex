@@ -101,20 +101,21 @@
 		\item \textbf{Scribbles/Strokes: }The user draws a rough line over the object.
 	\end{itemize}
 	\begin{center}
-		\includegraphics[width=0.8\linewidth]{imagens/visual_prompt_1.png}
+		\includegraphics[width=0.6\linewidth]{imagens/Promptable-Visual-Segmentation.jpg}
 	\end{center}
 \end{frame}
 
 \begin{frame}{General Background}
 	The history of this field can be broadly divided into two distinct eras.
 	\begin{itemize}
-		\item \textbf{Pre-Deep Learning Era (c. 1970s–2010s)}
-		\item \textbf{Deep Learning Era (c. 2010s - Now)}
+		\item \textbf{The Pre-Deep Learning Era: Seed-Based and Energy Models}
+		
+		\item \textbf{The Deep Learning Era: From Weak Supervision to Interaction}
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Pre-Deep Learning Era (c. 1970s-2010s)}
-	Visual prompts function as constraints or "seeds." When a user marks a specific area, the algorithm treats those pixels as absolute truth—anchors that define the statistical profile (color intensity or texture) of the target object. The algorithm then propagates this information outwards to neighboring pixels, grouping them together based on how similar they are to the anchor points, stops only when it encounters a sharp change in contrast (an edge). \pause \\
+\begin{frame}{The Pre-Deep Learning Era: Seed-Based and Energy Models}
+	Before the rise of neural networks, interactive segmentation relied on mathematical frameworks where user inputs acted as "seeds" or constraints for optimization algorithms. These methods focused on low-level features like color gradients and pixel connectivity: \pause \\
 	Prominent methods from
 	this period include:
 	\begin{itemize}
@@ -127,8 +128,8 @@
 	The prompt does not provide "understanding" of the object; it simply tells the math where to start calculating and what color values to look for nearby.
 \end{frame}
 
-\begin{frame}{Deep Learning Era (c. 2010s)}
-	Visual prompt is encoded into a high-dimensional vector and fused with the image features to act as a spatial query. Instead of just looking at neighbor pixel colors, the neural network uses the prompt to focus its "attention" mechanism on a specific region, combining the user's input with its own pre-trained knowledge of object shapes. For example, if a user clicks on a cat’s ear, the model doesn't just select the ear's color; it recognizes the semantic pattern of a "cat" and predicts the entire animal.\pause \\
+\begin{frame}{The Deep Learning Era: From Weak Supervision to Interaction}
+	The integration of Convolutional Neural Networks (CNNs) allowed models to learn semantic context, making visual prompts significantly more powerful and robust to noise.\pause \\
 	Key milestones include:
 	\begin{itemize}
 		\item Box Sup
@@ -144,8 +145,8 @@
 	Scientifically,
 	\begin{itemize}
 		\item Segmentation addresses a fundamental question in perception: while image classification tells us what is in an image, segmentation answers where it is, down to the pixel level; segmentation helps reveal how an image is organized by separating it into meaningful regions.
+		
 		\item Many methods in computer vision rely on segmented regions as inputs. Examples include object detection, recognition, tracking, 3D reconstruction, and medical image analysis. Better segmentation improves the performance of these tasks.
-%		\item Segmentation studies connect computational models with how humans interpret scenes. This benefits fields such as cognitive science and computational neuroscience.
 	\end{itemize}
 \end{frame}
 
@@ -207,7 +208,7 @@
 	\textbf{Digital Photograph}\\
 	\begin{center}
 		\includegraphics[width=0.5\linewidth]{imagens/photograph_1.png}
-		\includegraphics[width=0.5\linewidth]{imagens/photograph_2.png}
+		\includegraphics[width=0.4\linewidth]{imagens/photograph_2.png}
 	\end{center}
 \end{frame}
 
@@ -228,57 +229,12 @@
 		
 \end{frame}
 
-
-%\begin{frame}{Motivation}
-%	
-%	\begin{columns}[T]
-%		
-%		% --- LEFT COLUMN ---
-%		\begin{column}{0.5\textwidth}
-%			
-%			% TOP-LEFT CELL
-%			\textbf{Industrial Inspection}\par
-%			\begin{center}
-%				\includegraphics[height=0.25\textheight]{imagens/industrial_1.jpg}
-%			\end{center}
-%			
-%			\vfill % Adds space between the top and bottom cells
-%			
-%			% BOTTOM-LEFT CELL
-%			\begin{center}
-%				\includegraphics[height=0.25\textheight]{imagens/industrial_2.jpg}
-%			\end{center}
-%			
-%		\end{column}
-%		
-%		% --- RIGHT COLUMN ---
-%		\begin{column}{0.5\textwidth}
-%			
-%			% TOP-RIGHT CELL
-%			\textbf{Digital Photograph}\par
-%			\begin{center}
-%				\includegraphics[height=0.25\textheight]{imagens/photograph_1.png}
-%			\end{center}
-%			
-%			\vfill % Adds space between the top and bottom cells
-%			
-%			% BOTTOM-RIGHT CELL
-%			\begin{center}
-%				\includegraphics[height=0.25\textheight]{imagens/photograph_2.png}
-%			\end{center}
-%			
-%		\end{column}
-%		
-%	\end{columns}
-%\end{frame}
-
 \begin{frame}{Motivation}
 	\textbf{Segment Anything Model (SAM)}
 	\begin{displayquote}
 		“In this work, our goal is to build a foundation model
-		for image segmentation.” \cite{placeholder}
+		for image segmentation.”
 	\end{displayquote}
-	With this model, we aim to solve a range of downstream segmentation problems on new data distributions using prompt engineering.
 	
 \end{frame}
 
@@ -298,17 +254,6 @@
 	such that pixels within each region share similar properties according to some criterion.
 \end{frame}
 
-%\begin{frame}{Problem Statement}
-%	For a traditional image segmentation method, the task can be described by its inputs and outputs.\\
-%	\begin{itemize}
-%		\item \textbf{Input:}  An image together with a specified number of classes. Depending on the method, additional choices such as a similarity measure or clustering criterion may be required.
-%		
-%		\item \textbf{Output:} A segmentation result in which each pixel is assigned to one of the given classes. The output is typically represented as a label map where each pixel is assigned to a class of the same spatial size as the input image.
-%	\end{itemize}
-%	
-%\end{frame}
-	
-
 \begin{frame}{Problem Statement}
 	For a modern promptable segmentation system, the problem can be formally defined by its inputs and outputs.
 	
@@ -318,7 +263,6 @@
 				\item \textbf{Input:}  An image and a ”visual prompt” that specifies the object of interest. This prompt can take various forms, such as a point (or multiple points) on the object, a bounding box enclosing it, or even a rough mask.
 				\item \textbf{Output:} One or more segmentation masks for the object(s) indicated by the prompt, along with a confidence
 				score for each mask. 
-%				The ability to output multiple masks is crucial for handling ambiguity.
 			\end{itemize}
 		\end{column}
 		
@@ -331,30 +275,9 @@
 	\end{columns}
 \end{frame}
 
-%\subsection{Contribution}
-%\begin{frame}{Contribution}
-%	\begin{displayquote}
-%		"Our principal contributions are a new task (promptable segmentation), foundational model for that new task (SAM), and dataset (SA-1B)"
-%	\end{displayquote}
-%		A key contribution is the SA-1B dataset, which remains the largest segmentation dataset to date. It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
-%%		\begin{itemize}
-%%			\item \textbf{Scale:} It contains over 11 million high-resolution images and 1.1 billion high-quality segmentation masks.
-%%			\item \textbf{Privacy-First:} All images are privacy-respecting, with automated blurring of faces and license plates.
-%%			\item \textbf{Diversity:} The dataset is geographically diverse, with a significant number of images from countries around the world, as illustrated in \ref{fig:geo}. This helps mitigate geographical bias often present in large-scale datasets.
-%%		\end{itemize}
-%\end{frame}
-
-%\begin{frame}{Contribution}
-%	The contribution of this report is to provide a comprehensive survey and structured analysis of the field of image segmentation. We synthesize the historical evolution, explain the motivations driving modern research, and offer a detailed examination of the methodology behind foundation models like SAM, contextualizing their impact and outlining future directions.
-%\end{frame}
-
 \section{Related Works}
-\subsection{Traditional Methods}
 
-%\begin{frame}{Traditional Methods}
-%	In traditional methods, there are different techniques for image segmentation like threshold-based, edge-based, cluster-based.\\
-%	One of the most efficient methods is the clustering method.
-%\end{frame}
+\subsection{Traditional Methods}
 
 \begin{frame}{Traditional Methods} % Mechanics
 	\begin{table}[h]
@@ -531,7 +454,6 @@
 			
 			Segment Anything
 			& Transformer based mask decoder predicts multiple candidate masks with confidence scores. \\ \hline
-			
 		\end{tabular}
 	\end{table}
 \end{frame}
@@ -583,115 +505,6 @@
 	
 \end{frame}
 
-%\begin{frame}{Visual Prompt Methods} % Mechanics
-%	\begin{table}[h]
-%		\centering
-%		\begin{tabular}{|l|p{10cm}|}
-%			\hline
-%			\textbf{Technique} & \textbf{Mechanics} \\ \hline
-%			
-%			GrabCut
-%			& Models foreground and background with Gaussian Mixture Models. \\ \hline
-%			
-%			FocalClick
-%			& Dual branch design: global branch for full image understanding, focal branch that zooms into the region indicated by clicks. \\ \hline
-%			
-%			SAM
-%			& Uses a large image encoder based on Vision Transformers and a lightweight prompt encoder for points, boxes, or masks. \\ \hline
-%			
-%		\end{tabular}
-%	\end{table}
-%\end{frame}
-
-%\begin{frame}{Visual Prompt Methods} % Methodology
-%	\begin{table}[h]
-%		\centering
-%		\begin{tabular}{|l|p{6cm}|p{6cm}|}
-%			\hline
-%			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-%			& \textbf{Prompt Acquisition and Encoding} & \textbf{Feature Representation and Context Modeling} \\ \hline
-%			
-%			GrabCut
-%			& Bounding box serves as the prompt and is encoded by assigning initial labels to foreground and background regions
-%			& Image representation is formed by GMM based color models and pairwise smoothness terms \\ \hline
-%			
-%			FocalClick 
-%			& Clicking points are encoded as foreground or background click maps that serve as spatial guidance
-%			& Contextual representation is obtained using deep features from global and focal branches \\ \hline
-%			
-%			SAM
-%			& Prompts such as points, boxes, or masks are encoded into prompt tokens via a dedicated prompt encoder
-%			& Contextual representation is obtained from a Vision Transformer that produces a high dimensional embedding of the input image \\ \hline
-%			
-%		\end{tabular}
-%	\end{table}
-%\end{frame}
-%
-%\begin{frame}{Visual Prompt Methods} % Methodology
-%	\begin{table}[h]
-%		\centering
-%		\begin{tabular}{|l|p{5cm}|p{5cm}|}
-%			\hline
-%			\textbf{Technique} & \multicolumn{2}{c|}{\textbf{Methodology}} \\ \cline{2-3}
-%			& \textbf{Guided Inference} & \textbf{Mask Generation} \\ \hline
-%			
-%			GrabCut
-%			& Guided inference occurs through graph cut energy minimization 
-%			& Mask generation corresponds to the binary labeling produced by the optimized cut \\ \hline
-%			
-%			FocalClick
-%			& Guided inference is performed by a learned mapping that conditions feature integration on the encoded prompts 
-%			& Mask generation is achieved by fusing outputs from global and focal modules to produce a refined prediction \\ \hline
-%			
-%			SAM
-%			& Guided inference is conducted by a mask decoder that integrates prompt embeddings with the image embedding using attention mechanisms
-%			& Mask generation consists of producing multiple candidate masks with associated confidence scores in a single forward pass \\ \hline
-%			
-%		\end{tabular}
-%	\end{table}
-%\end{frame}
-
-%\begin{frame}{Visual Prompt Methods} % Contribution
-%	\begin{table}[h]
-%		\centering
-%		\begin{tabular}{|l|p{10cm}|}
-%			\hline
-%			\textbf{Technique} & \textbf{Contribution} \\ \hline
-%			
-%			GrabCut 
-%			& Introduced iterative GMM refinement integrated with graph cuts. Became a foundational technique in classical computer vision.\\ \hline
-%			
-%			FocalClick 
-%			& Introduced coarse to fine refinement through focal regions. Better handling of small objects and thin structures than older deep methods.\\ \hline
-%			
-%			SAM
-%			& First truly general purpose segmentation foundation model. Enables interactive segmentation, automatic segmentation, and box guided segmentation in one model. \\ \hline
-%			
-%		\end{tabular}
-%	\end{table}
-%\end{frame}
-
-%\begin{frame}{Visual Prompt Methods} % Limitation
-%	\begin{table}[h]
-%		\centering
-%		\begin{tabular}{|l|p{10cm}|}
-%			\hline
-%			\textbf{Technique} & \textbf{Limitations} \\ \hline
-%			
-%			GrabCut 
-%			& Struggles with fine boundaries such as hair or transparent objects. Sensitive to the initial bounding box.\\ \hline
-%			
-%			FocalClick 
-%			& Does not generalize as well to unseen image types compared to foundation models. Performance depends on click placement quality.\\ \hline
-%			
-%			SAM
-%			& High computational cost during preprocessing due to large encoder. Not ideal for pixel perfect tasks such as thin structures or high precision medical boundaries without fine tuning. Mask quality depends on prompt placement.\\ \hline
-%			
-%		\end{tabular}
-%	\end{table}
-%	
-%\end{frame}
-
 \section{Methodology}
 \subsection{Data Collection}
 \begin{frame}{Dataset SA-1B}
@@ -730,6 +543,7 @@
 		\item \textbf{Average masks per image:} $20 \rightarrow 44$ (increased diversity as model improved).
 		\item \textbf{Total masks collected:} 4.3M from 120K images.
 		\item \textbf{Retraining cycles:} 6 full model retraining iterations.
+		\item \textbf{Total masks collected:} 4.3M from 120K images.
 	\end{itemize}
 \end{frame}
 
@@ -751,13 +565,8 @@
 \end{frame}
 
 \begin{frame}{Dataset SA-1B}
-	\textbf{Quantitative Dynamics:} \\
-	\begin{itemize}
-		\item \textbf{Annotation time (excluding automatic masks):} $\sim$34 seconds per mask (unchanged; challenging objects require the same effort).
-		\item \textbf{Average masks per image:} $44 \rightarrow 72$ (including automatic masks; diversity increased substantially).
-		\item \textbf{New masks collected:} 5.9M, raising the cumulative total to 10.2M masks.
-		\item \textbf{Retraining cycles:} 5 full model retraining iterations.
-	\end{itemize}
+	\textbf{Why This Engineering is Critical:} \\
+	The semi-automatic stage is a \textbf{curriculum learning} strategy. By automatically handling easy cases and forcing annotators to label hard cases, the model learns a more balanced representation. This is empirically validated: the model's ability to handle edge cases improved significantly from Stage 1 to Stage 2, as evidenced by the diversity metrics.
 \end{frame}
 
 \begin{frame}{Dataset SA-1B}
@@ -846,9 +655,33 @@
 	A regular grid ensures comprehensive spatial coverage. If an object's boundary passes through or near a grid point, the model will capture it from that point. Objects of varying sizes are covered because the grid is at a fixed, moderate resolution. This is fundamentally different from random point sampling, which can miss objects entirely.
 \end{frame}
 
+\begin{frame}{Dataset SA-1B}
+	Overall, this three-stage pipeline can be summarized:
+	\begin{enumerate}
+		\item \textbf{Stage 1} teaches the model to segment \textit{diverse} objects via human guidance.
+		\item \textbf{Stage 2} forces the model to learn \textit{challenging} objects via curriculum learning.
+		\item \textbf{Stage 3} leverages the improved model to generate \textit{scale} without human cost.
+	\end{enumerate}
+\end{frame}
+
 \begin{frame}{Segment Anything Model}
 	\textbf{Why 3 outputs per prompt?}\\
 	Empirical analysis during SAM's development showed that image regions typically have at most three levels of semantic hierarchy (whole $>$ part $>$ sub-part). Predicting three masks covers all common ambiguity scenarios without excessive computation.
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	\textbf{The Output Token Design:}
+	\begin{itemize}
+		\item The Mask Decoder predicts three masks from a single prompt, ranked by IoU score.
+		\item \textbf{Whole object:} The complete, semantically coherent object.
+		\item \textbf{Part:} A prominent sub-component (e.g., a wheel on a car, a face on a person).
+		\item \textbf{Sub-part:} Fine-grained components (e.g., an eye within a face, a spoke within a wheel).
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Output token is an embedding vector acts as a query for the final mask prediction (analogous to CLS token in BERT or ViT).\\
+	This token gether information about the prompt embeddings and image embeddings to form semantic information required to segment the target object.
 \end{frame}
 
 \begin{frame}{Segment Anything Model}
@@ -877,17 +710,100 @@
 \end{frame}
 
 \begin{frame}{Segment Anything Model}
-	Output token is an embedding vector acts as a query for the final mask prediction (analogous to CLS token in BERT or ViT).\\
-	This token gether information about the prompt embeddings and image embeddings to form semantic information required to segment the target object.
+	\textbf{Key Design:}
+	\begin{itemize}
+		\item Image Encoder runs \textbf{once per image}, producing a latent embedding.
+		\item This embedding is cached.
+		\item Prompt Encoder and Mask Decoder run \textbf{every time the user provides a new prompt} on the cached embedding.
+		\item Result: 50ms per prompt on CPU in a web browser (no GPU required).
+	\end{itemize}
 \end{frame}
 
 \begin{frame}{Segment Anything Model}
-	\begin{itemize}
-		\item Image Encoder: Fine-tune its weights to adapt its visual features to be queryable.
-		\item Mask Decoder: Transformer layers, MLP, upscaling convolutions.
-		\item Prompt Encoder: Convolutional layers for positional encodings, vectors for "Foreground", "Background", Top-left", "Bottom-right", Not-a-point".
-		\item Output token: 4 vectors (3 for multi-mask outputs: whole, part, sub-part, 1 for IoU confidence prediction).
-	\end{itemize}
+	In traditional interactive segmentation (e.g., RITM, SimpleClick), the entire network processes the image for each new click, leading to latency. SAM's decoupling means that the first prompt has a cost (cached image encoding) and subsequent prompts are nearly free. For applications with many prompts (e.g., dense instance segmentation with many objects), the amortized cost per object approaches zero.
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Image Encoder: A Vision Transformer (ViT) processes images by:
+	\begin{enumerate}
+		\item Dividing the image into non-overlapping patches (typically $16 \times 16$ pixels).
+		\item Flattening each patch into a 1D vector and projecting to embedding dimension $d = 768$ (for ViT-B) or $d = 1280$ (for ViT-H).
+		\item Adding \textbf{positional embeddings} to inject spatial information.
+		\item Processing the sequence of patch embeddings through stacked Transformer layers using self-attention.
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Prompt Encoder:
+	\textbf{Points (Foreground/Background):}
+	
+	A point prompt is simply a 2D coordinate $(x, y)$ and a label indicating foreground (+1) or background (-1).
+	
+	\textbf{Representation:}
+	\begin{enumerate}
+		\item Convert coordinate to positional encoding (using sinusoidal or learned embeddings).
+		\item Embed the foreground/background label using learned embeddings $\mathbf{e}_{\text{fg}}$ and $\mathbf{e}_{\text{bg}}$ (dimension 256).
+		\item Sum the positional and semantic embeddings:
+		\[ \mathbf{p}_{\text{point}} = PE(x, y) + \mathbf{e}_{\text{label}} \]
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Prompt Encoder:
+	\textbf{Boxes (Bounding Box Prompts):}
+	
+	A box is specified by two corners: $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$.
+	
+	\textbf{Representation:}
+	\begin{enumerate}
+		\item Generate two "corner points": $(x_{\min}, y_{\min})$ and $(x_{\max}, y_{\max})$.
+		\item Encode each corner with distinct learned embeddings ($\mathbf{e}_{\text{top-left}}$, $\mathbf{e}_{\text{bottom-right}}$).
+		\item Embed the box as:
+		\[ \mathbf{p}_{\text{box}} = [PE(x_{\min}, y_{\min}) + \mathbf{e}_{\text{top-left}}, \quad PE(x_{\max}, y_{\max}) + \mathbf{e}_{\text{bottom-right}}] \]
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Prompt Encoder:
+	\textbf{Mask (Dense Prompts):}
+	
+	\textbf{Representation:}
+	\begin{enumerate}
+		\item Resize the input mask to match the spatial resolution of the Image Embedding (e.g., $256 \times 256$ if image is $1024 \times 1024$).
+		\item Apply \textbf{2D convolutions} to extract spatial features:
+		\begin{itemize}
+			\item Input: Binary mask (single channel).
+			\item Conv layers: 3–4 layers with ReLU activations, stride 1.
+			\item Output: Feature map of shape $(256 \times 256, C)$ where $C = 256$.
+		\end{itemize}
+		\item Element-wise sum with the Image Embedding:
+		\[ \mathbf{z}_{\text{fused}} = \mathbf{z}_{\text{image}} + \mathbf{z}_{\text{mask}} \]
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Mask Decoder: Two-Way Transformer Fusion
+	
+	\begin{enumerate}
+		\item \textbf{Self-attention on prompts:} Prompts attend to themselves to capture relationships between multiple prompts (e.g., if multiple points are provided, they can "communicate").
+		\[ \mathbf{A}_{\text{prompt}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{prompt}} \mathbf{K}_{\text{prompt}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{prompt}} \]
+		
+		\item \textbf{Cross-attention (prompt $\rightarrow$ image):} Prompts query the Image Embedding to extract relevant regions.
+		\[ \mathbf{A}_{\text{p2i}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{prompt}} \mathbf{K}_{\text{image}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{image}} \]
+	\end{enumerate}
+\end{frame}
+
+\begin{frame}{Segment Anything Model}
+	Mask Decoder: Two-Way Transformer Fusion
+	
+	\begin{enumerate}
+    	\item \textbf{Cross-attention (image $\rightarrow$ prompt):} Conversely, the Image Embedding queries the Prompt Embedding to understand what the user is asking for.
+		\[ \mathbf{A}_{\text{i2p}} = \text{Softmax}\left(\frac{\mathbf{Q}_{\text{image}} \mathbf{K}_{\text{prompt}}^T}{\sqrt{d}}\right) \mathbf{V}_{\text{prompt}} \]
+
+		\item \textbf{Update embeddings:} All three attention outputs are summed and passed through layer normalization and MLPs:
+		\[ \mathbf{z}'_{\text{prompt}} = \text{LN}(\mathbf{z}_{\text{prompt}} + \mathbf{A}_{\text{prompt}} + \mathbf{A}_{\text{p2i}}) \]
+		\[ \mathbf{z}'_{\text{image}} = \text{LN}(\mathbf{z}_{\text{image}} + \mathbf{A}_{\text{i2p}}) \]
+	\end{enumerate}
 \end{frame}
 
 \subsection{Model Architecture}
@@ -906,153 +822,29 @@
 	\end{itemize}
 \end{frame}
 
-\section{Implementation \& Experiment}
-
 \section{Conclusion}
+
+\begin{frame}{Conclusion}
+	This report has surveyed the evolution of image segmentation, tracing its trajectory from early mathematical heuristics to the modern era of foundation models. We began by examining traditional methods such as Watershed and Region Growing, which relied on low-level pixel intensity and required significant user intervention to define boundaries. We then explored the transition to deep learning approaches like BoxSup and DEXTR, which introduced semantic understanding but were often limited by the scale of their training data and specific class vocabularies.
+\end{frame}
+
+\begin{frame}{Conclusion}
+	The focal point of our analysis, the Segment Anything Model (SAM), represents a paradigm shift in this domain. By leveraging a massive "Data Engine" and a decoupled architecture—separating a heavy image encoder from a lightweight prompt decoder—SAM has demonstrated that zero-shot generalization is achievable on a scale previously thought impossible. Our review of the methodology confirms that the integration of human-in-the-loop annotation (the "flywheel effect") was accurate in solving the data scarcity problem that hindered previous generations of segmentation models.
+\end{frame}
 
 \section{Discussion}
 
-%----------------------------------------------
-
-% \section{Plans}
-% \begin{frame}{5. Plans}
-%     \begin{itemize}
-%         \item Deep reading, summarize key ideas for the report (all members).
-%         \item Write core theory sections, start coding implementation.
-%         \begin{itemize}
-%             \item Implementing base models (An).
-%             \item \href{https://github.com/AnhKhoa585/hopfield-npHard}{\textbf{NP-hard solver}} (Khoa).
-%             \item Associative Memory for Image Reconstruction (An).
-%             \item \textbf{\href{https://github.com/sabertoaster/HopfieldWordle}{Hopfield Wordle}} (Huy).
-
-%         \end{itemize}
-%         \item Run experiments, collect results (all members).
-%         \item Complete the report (Hong).
-%         \item Prepare presentation slides (all members).
-%         \item Record and edit 10–15 mins presentation video (all members).
-%         \item Review formatting, references, and finalize all files (all members).
-%     \end{itemize}
-% \end{frame}
-\section{References}
-\begin{frame}[allowframebreaks]{References}
-    \bibliography{./references}
+\begin{frame}{Discussion}
+	Despite the remarkable capabilities of foundation models, our analysis in Chapter 3 highlights inherent limitations regarding computational resources. The reliance on a Vision Transformer (specifically ViT-H) for the image encoder creates a significant bottleneck. While the prompt encoder is efficient (operating in milliseconds), the initial image embedding step is computationally expensive, making the current full-scale model unsuitable for real-time applications on edge devices or mobile platforms without hardware acceleration.
 \end{frame}
 
+\begin{frame}{Discussion}
+	Furthermore, while Chapter 2 highlighted that traditional methods like GrabCut were prone to failure on complex textures, they had the advantage of being lightweight. SAM, conversely, trades computational weight for semantic robustness. Additionally, while the $32 \times 32$ grid prompting strategy allows for automatic mask generation, the model still occasionally struggles with highly ambiguous structures or "camouflaged" objects where the boundary between foreground and background is semantically ill-defined.
+\end{frame}
 
-% \section{Conteúdo}
-
-% \begin{frame}{Definições, Teoremas, Corolários e Exemplos}
-%     \begin{block}{Definição 2.1.1}
-%     Aqui temos uma nova definição.
-%     \end{block}
-    
-%     \begin{block}{Teorema 2.1.2}
-%     Aqui temos um novo teorema.
-%     \end{block}
-    
-%     \begin{block}{Exemplo 2.1.3}
-%     Aqui temos um novo exemplo.
-%     \end{block}
-    
-%     \begin{block}{Corolário 2.1.4}
-%     Aqui temos um novo corolário.
-%     \end{block}
-% \end{frame}
-
-% \begin{frame}{Citações das Referências}
-%     Livro de Análise Real~\cite{lima2004analise}
-% \end{frame}
-
-% \begin{frame}{Listas}
-%     Exemplo de lista com símbolos:
-
-%     \begin{itemize}
-%         \item Primeiro elemento
-%         \item Segundo elemento
-%     \end{itemize}
-    
-%     \bigskip
-    
-%     Exemplo de lista com itens enumerados:
-    
-%     \begin{enumerate}
-%         \item Primeiro elemento
-%         \item Segundo elemento
-%     \end{enumerate}
-% \end{frame}
-
-% \begin{frame}{Tabelas}
-%     A Tabela mostra um modelo de tabela.
-
-%     \begin{table}[htb]
-%         \caption{Exemplo de tabela}
-%         \label{tab:modelo_tabela}
-%         \centering
-%         \begin{tabular}{c|c|c|c}
-% 	        \hline
-% 	        \textbf{Pessoa} & \textbf{Idade} & \textbf{Peso} & \textbf{Altura} \\ \hline
-% 	        Marcos & 26    & 68   & 178    \\ \hline
-% 	        Ivone  & 22    & 57   & 162    \\ \hline
-% 	        Sueli  & 40    & 65   & 153    \\ \hline
-%         \end{tabular}
-        
-%         \medskip
-        
-%         Fonte: Produção do próprio autor.
-%     \end{table}
-% \end{frame}
-
-% \begin{frame}{Imagens}
-%     A Figura mostra a logomarca promocional da Universidade Federal do Espírito Santo (UFES).
-    
-%     \begin{figure}[htb]
-%         \caption{Logomarca Promocional UFES}
-%         \label{fig:logo_UFES}
-%         \centering
-%         \includegraphics[width=0.5\textwidth]{imagens/logomarca_UFES}
-        
-%         \medskip
-        
-%         Fonte: Produção do próprio autor.
-%     \end{figure}
-% \end{frame}
-
-% \begin{frame}{Conclusão}
-%     Texto referente à conclusão.
-% \end{frame}
-
-% \begin{frame}{Trabalhos futuros}
-%     \begin{itemize}
-%         \item Estudar $\ldots$
-        
-%         \medskip
-        
-%         \item Explorar $\ldots$
-        
-%         \medskip
-        
-%         \item Analisar $\ldots$
-%     \end{itemize}
-% \end{frame}
-
-% \section{Referências}
-% \begin{frame}[allowframebreaks]{Referências}
-%     \bibliography{referencias}
-% \end{frame}
-
-% \begin{frame}
-
-% \begin{center}
-%     Obrigado!
-    
-%     \email
-% \end{center}
-
-% \begin{figure}[htb]
-%     \centering
-%     \includegraphics[width=0.5\textwidth]{imagens/logomarca_UFES}
-% \end{figure}
-
-% \end{frame}
+%\section{References}
+%\begin{frame}[allowframebreaks]{References}
+%    \bibliography{./references}
+%\end{frame}
 
 \end{document}
