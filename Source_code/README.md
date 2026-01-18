@@ -41,13 +41,13 @@ or clone the repository locally and install with
 
 ```
 git clone git@github.com:facebookresearch/segment-anything.git
-cd segment-anything; pip install -e .
-```
+cd segment-anything
 
-The following optional dependencies are necessary for mask post-processing, saving masks in COCO format, the example notebooks, and exporting the model in ONNX format. `jupyter` is also required to run the example notebooks.
-
-```
-pip install opencv-python pycocotools matplotlib onnxruntime onnx
+python -m venv venv
+venv\Scripts\activate
+python -m pip install -e .
+python -m pip install opencv-python pycocotools matplotlib onnxruntime onnx jupyter onnxscript
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 ```
 
 ## <a name="GettingStarted"></a>Getting Started
